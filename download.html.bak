@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下载站点</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>欢迎来到下载站点</h1>
+        <ul>
+            <li><a href="https://cdn.luogu.com.cn/upload/image_hosting/dcq0rn5e.png" download="fish.png">下载【鱼】图片</a></li>
+            <li><a href="files/ker_memo-1.0.0.jar" download="ker_memo-1.0.0.jar">下载梗模组</a></li>
+            <li><a href="files/server.zip" download="server.zip">TRYCCC服务器存档-2024-11-5</a></li>
+        </ul>
+    </div>
+</body>
+</html>
