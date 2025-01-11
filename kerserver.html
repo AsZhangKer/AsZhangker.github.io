@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ker服务器，专心专注，三代</title>
+  <style>
+    /* General Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Body & Global Styles */
+    body {
+      font-family: 'Arial', sans-serif;
+      line-height: 1.6;
+      background-color: #f0f8ff;
+      color: #333;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    header {
+      background: linear-gradient(to bottom, #0099cc, #006699);
+      color: #fff;
+      text-align: center;
+      padding: 50px 20px;
+    }
+
+    header h1 {
+      font-size: 3rem;
+      margin-bottom: 10px;
+    }
+
+    header h1 .highlight {
+      color: #66ccff;
+    }
+
+    header p {
+      font-size: 1.2rem;
+    }
+
+    /* About Section */
+    .about-section {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 50px 10%;
+    }
+
+    .about-section .text {
+      flex: 1;
+      padding-right: 20px;
+    }
+
+    .about-section .text h2 {
+      font-size: 2rem;
+      margin-bottom: 15px;
+      color: #006699;
+    }
+
+    .about-section .text p {
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+
+    .about-section .image-container {
+      flex: 1;
+    }
+
+    .about-section .image-container img {
+      width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Features Section */
+    .features-section {
+      background-color: #e6f7ff;
+      padding: 50px 10%;
+      text-align: center;
+    }
+
+    .features-section h2 {
+      font-size: 2rem;
+      margin-bottom: 30px;
+      color: #006699;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .feature-card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+
+    .feature-card h3 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      color: #006699;
+    }
+
+    .feature-card p {
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    /* Join Section */
+    .join-section {
+      background: linear-gradient(to right, #66ccff, #33b5e5);
+      color: #fff;
+      text-align: center;
+      padding: 50px 10%;
+    }
+
+    .join-section h2 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    .join-section p {
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }
+
+    .join-section button {
+      background: #006699;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background 0.3s ease;
+    }
+
+    .join-section button:hover {
+      background: #00507a;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 20px 10px;
+      background: #006699;
+      color: #fff;
+    }
+
+    footer a {
+      color: #66ccff;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-container">
+      <h1>介绍页 of <span class="highlight">KerCraft</span></h1>
+      <p>Your ultimate Minecraft server for technology enthusiasts!</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="about-section">
+      <div class="text">
+        <h2>服务器信息</h2>
+        <p>
+          由网络服务器整合包改良而来，独具特色；拥有fabric和bukkit组件，保障游玩体验。
+        </p>
+      </div>
+      <div class="image-container">
+        <img src="images/about.jpg" alt="About our server">
+      </div>
+    </section>
+
+    <section class="features-section">
+      <h2>服务器展览</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <img src="https://cdn.luogu.com.cn/upload/image_hosting/8gv7jrdu.png" alt="Custom Plugins">
+          <h3>商店和全球市场</h3>
+          <p>使用插件让游戏不再枯燥</p>
+        </div>
+        <div class="feature-card">
+          <img src="https://cdn.luogu.com.cn/upload/image_hosting/g4dq4vcw.png" alt="Active Community">
+          <h3>服务器活动</h3>
+          <p>和你的朋友一起生存</p>
+        </div>
+        <div class="feature-card">
+          <img src="https://cdn.luogu.com.cn/upload/image_hosting/z314dqab.png" alt="Lag-Free Performance">
+          <h3>真正自由</h3>
+          <p>没有限制，没有反作弊，自己的服务器更放心</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="join-section">
+      <h2>加入，就在今天！</h2>
+      <p>
+        你可以通过访问我们的官网获得信息，可以加入QQ群或者直连ip！
+      </p>
+      <button>ip地址还没写好（（（qq群号:450963926
+      </button>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 KerCraft. All Rights Reserved.</p>
+    <p>Contact us: <a href="mailto:zhangkairui_wy@163.com">support@kerCraft.com</a></p>
+  </footer>
+</body>
+</html>
