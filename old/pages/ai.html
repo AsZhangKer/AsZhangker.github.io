@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI导航</title>
+    <!-- 使用Font Awesome图标库 (仅用于图标，不影响布局) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 极简重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #f5f7fa;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            padding: 2rem;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 2px solid #cbd5e1;
+            padding-bottom: 0.5rem;
+        }
+        .category {
+            margin-bottom: 2.5rem;
+        }
+        .category h2 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #334155;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 0.5rem;
+        }
+        /* 核心网格：多列平铺 */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 1.2rem;
+        }
+        /* 卡片样式 */
+        .card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 1.5rem 0.8rem;
+            background: white;
+            border-radius: 16px 0 16px 0; /* 模拟混合圆角 */
+            text-decoration: none;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: #94a3b8;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+            background: #f8fafc;
+        }
+        .icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px 0 16px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.8rem;
+            font-size: 1.8rem;
+            color: white;
+            transition: transform 0.2s;
+        }
+        .card:hover .icon {
+            transform: rotate(8deg) scale(1.05);
+        }
+        .name {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+        .desc {
+            font-size: 0.8rem;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        /* 分类图标渐变（示例） */
+        .chatgpt .icon { background: linear-gradient(135deg, #10a37f, #1a73e8); }
+        .chinese .icon { background: linear-gradient(135deg, #ea4335, #fbbc05); }
+        .code .icon    { background: linear-gradient(135deg, #34a853, #4285f4); }
+        .media .icon   { background: linear-gradient(135deg, #9c27b0, #673ab7); }
+        /* 响应式微调 */
+        @media (max-width: 600px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            body { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-robot"></i> AI导航 · 网格演示</h1>
+
+        <!-- ChatGPT系列 -->
+        <div class="category">
+            <h2><i class="fas fa-comment-dots"></i> ChatGPT系列</h2>
+            <div class="grid">
+                <a href="#" class="card chatgpt">
+                    <div class="icon"><i class="fas fa-robot"></i></div>
+                    <div class="name">ChatGPT官网</div>
+                    <div class="desc">OpenAI官方对话AI</div>
+                </a>
+                <a href="#" class="card chatgpt">
+                    <div class="icon"><i class="fas fa-comments"></i></div>
+                    <div class="name">Claude</div>
+                    <div class="desc">Anthropic智能助手</div>
+                </a>
+                <a href="#" class="card chatgpt">
+                    <div class="icon"><i class="fas fa-p"></i></div>
+                    <div class="name">Poe</div>
+                    <div class="desc">多AI平台聚合</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- 国产AI系列 -->
+        <div class="category">
+            <h2><i class="fas fa-flag"></i> 国产AI系列</h2>
+            <div class="grid">
+                <a href="#" class="card chinese"><div class="icon"><i class="fas fa-brain"></i></div><div class="name">DeepSeek</div><div class="desc">深度求索AI助手</div></a>
+                <a href="#" class="card chinese"><div class="icon"><i class="fas fa-dragon"></i></div><div class="name">文心一言</div><div class="desc">百度AI大模型</div></a>
+                <a href="#" class="card chinese"><div class="icon"><i class="fas fa-cloud"></i></div><div class="name">通义千问</div><div class="desc">阿里云AI助手</div></a>
+                <a href="#" class="card chinese"><div class="icon"><i class="fas fa-mind-share"></i></div><div class="name">智谱AI</div><div class="desc">清华系AI大模型</div></a>
+                <a href="#" class="card chinese"><div class="icon"><i class="fas fa-moon"></i></div><div class="name">月之暗面</div><div class="desc">Kimi智能助手</div></a>
+                <a href="#" class="card chinese"><div class="icon"><i class="fas fa-database"></i></div><div class="name">豆包</div><div class="desc">字节跳动AI助手</div></a>
+                <a href="#" class="card chinese"><div class="icon"><i class="fas fa-mountain"></i></div><div class="name">Kimi Chat</div><div class="desc">长文本处理专家</div></a>
+            </div>
+        </div>
+
+        <!-- 编程AI系列 -->
+        <div class="category">
+            <h2><i class="fas fa-code"></i> 编程AI</h2>
+            <div class="grid">
+                <a href="#" class="card code"><div class="icon"><i class="fab fa-github"></i></div><div class="name">GitHub Copilot</div><div class="desc">AI编程助手</div></a>
+                <a href="#" class="card code"><div class="icon"><i class="fas fa-code"></i></div><div class="name">Cursor</div><div class="desc">AI集成编辑器</div></a>
+                <a href="#" class="card code"><div class="icon"><i class="fas fa-terminal"></i></div><div class="name">Codeium</div><div class="desc">免费AI编程工具</div></a>
+                <a href="#" class="card code"><div class="icon"><i class="fas fa-cogs"></i></div><div class="name">Tabnine</div><div class="desc">AI代码补全</div></a>
+            </div>
+        </div>
+
+        <!-- 多媒体AI -->
+        <div class="category">
+            <h2><i class="fas fa-images"></i> 多媒体AI</h2>
+            <div class="grid">
+                <a href="#" class="card media"><div class="icon"><i class="fas fa-palette"></i></div><div class="name">Midjourney</div><div class="desc">AI图像生成</div></a>
+                <a href="#" class="card media"><div class="icon"><i class="fas fa-image"></i></div><div class="name">DALL·E</div><div class="desc">OpenAI图像生成</div></a>
+                <a href="#" class="card media"><div class="icon"><i class="fas fa-magic"></i></div><div class="name">Stable Diffusion</div><div class="desc">开源图像生成</div></a>
+                <a href="#" class="card media"><div class="icon"><i class="fas fa-video"></i></div><div class="name">Runway</div><div class="desc">AI视频生成</div></a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

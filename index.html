@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+  <title>Ker · owo</title>
+  <link rel="icon" href="imgs/icon.png" type="image/png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="lib/css/style.css">
+</head>
+<body>
+  <!-- 壁纸背景 -->
+  <div id="wallpaper-bg">
+    <img id="bing-wallpaper" src="https://bing.img.run/1920x1080.php" alt="Bing 壁纸" loading="lazy">
+  </div>
+
+  <!-- 主容器 -->
+  <div id="app" class="theme-light" data-lang="zh-CN">
+    <!-- 导航栏 -->
+    <header class="navbar">
+      <div class="nav-left">
+        <img src="imgs/icon.png" alt="site icon" class="site-icon">
+        <span class="site-name">Ker - owo</span>
+      </div>
+
+      <nav class="nav-center">
+        <!-- 概述 -->
+        <div class="dropdown">
+          <button class="dropbtn nav-btn"><i class="fas fa-compass"></i> 概述</button>
+          <div class="dropdown-content">
+            <a href="#intro"><i class="fas fa-star"></i> 探索、创造、分享</a>
+            <a href="#intro"><i class="fas fa-globe"></i> 这是我的数字世界</a>
+            <a href="#intro"><i class="fas fa-signature"></i> Ker. - 2026</a>
+          </div>
+        </div>
+        <!-- 项目 -->
+        <div class="dropdown">
+          <button class="dropbtn nav-btn"><i class="fas fa-folder-open"></i> 项目</button>
+          <div class="dropdown-content">
+            <a href="pages/mcbook.html"><i class="fas fa-book"></i> 我的世界成书生成器</a>
+            <a href="https://ark.zker.top/"><i class="fas fa-gamepad"></i> 终末地图标生成器</a>
+            <a href="pages/password.html"><i class="fas fa-gamepad"></i> 密码小游戏</a>
+            <a href="https://ker-download.zker.top/" target="_blank"><i class="fas fa-download"></i> Ker下载站</a>
+            <a href="https://blog.zker.top/" target="_blank"><i class="fas fa-blog"></i> Ker博客</a>
+            <a href="https://980765.xyz/admin/login" target="_blank"><i class="fas fa-server"></i> 管理站(旧)</a>
+            <a href="https://shotcuter.zker.top/" target="_blank"><i class="fas fa-cog"></i> 管理站</a>
+          </div>
+        </div>
+        <!-- 友联 -->
+        <div class="dropdown">
+          <button class="dropbtn nav-btn"><i class="fas fa-link"></i> 友链</button>
+          <div class="dropdown-content">
+            <a href="https://zker.top" target="_blank"><i class="fas fa-globe"></i> zker.top</a>
+            <a href="https://noctiro.moe" target="_blank"><i class="fas fa-moon"></i> noctiro.moe</a>
+            <a href="https://azsu.top" target="_blank"><i class="fas fa-server"></i> azsu.top</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="nav-right">
+        <div class="search-wrap">
+          <input type="text" class="search-input" placeholder="搜索..." aria-label="搜索">
+          <button class="search-btn"><i class="fas fa-search"></i></button>
+        </div>
+        <div id="typer-root" class="typer-wrapper"></div>
+      </div>
+    </header>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+      <!-- 头像 + 欢迎区 -->
+      <section class="hero-section" id="intro">
+        <div class="avatar-wrapper">
+          <img src="imgs/my.png" alt="avatar" class="avatar">
+        </div>
+        <div class="welcome-box">
+          <h1>欢迎来到 Ker's Website</h1>
+          <p class="subtitle">探索 · 创造 · 分享</p>
+          <div class="social-links">
+            <a href="https://github.com/AsZhangKer" target="_blank" class="social-btn github"><i class="fab fa-github"></i> GitHub</a>
+            <a href="https://space.bilibili.com/1909724646" target="_blank" class="social-btn bilibili"><i class="fab fa-bilibili"></i> B站</a>
+            <a href="https://qm.qq.com/q/wgSYwLP1Zu" target="_blank" class="social-btn qq"><i class="fab fa-qq"></i> QQ群</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- 近期动态 -->
+      <section class="extra-section">
+        <h2><i class="fas fa-pen-fancy"></i> 近期动态</h2>
+        <p>新增以下站点和项目：</p>
+        <ul>
+          <li><i class="fas fa-book"></i> <a href="/pages/mcbook.html">我的世界成书生成器</a></li>
+          <li><i class="fas fa-gamepad"></i> <a href="/pages/password.html">密码小游戏</a></li>
+          <li><i class="fas fa-gamepad"></i> <a href="https://ark.zker.top/">终末地Logo生成器</a></li>
+          <li><i class="fas fa-download"></i> <a href="https://ker-download.zker.top/" target="_blank">Ker下载站</a></li>
+        </ul>
+      </section>
+    </main>
+
+    <!-- 底部 -->
+    <footer class="footer">
+      <div class="footer-inner">
+        <span><i class="far fa-copyright"></i> © 2026 Ker. All rights reserved.</span>
+        <span class="icp"><i class="fas fa-shield-alt"></i> 萌ICP备 20266606号</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- React -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- 外部 JS -->
+  <script src="lib/js/main.js"></script>
+</body>
+</html>

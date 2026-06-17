@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh">
+<script src="https://cdn.bootcss.com/vue/2.6.11/vue.min.js"></script>
+<script src="https://lab.magiconch.com/nbnhhsh/nbnhhsh.user.js"></script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ker | 温暖的小窝</title>
+    <link rel="icon" href="imgs/favicon.png" type="image/png">
+    <!-- 引入 React 和 ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- 引入 Babel 解析 JSX -->
+    <script src="https://unpkg.com/@babel/standalone@7.23.9/babel.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- 鼠标指针样式（修复深色模式颜色） -->
+    <style>
+		/* 自定义选中颜色：#F0EAE2 */
+::selection {
+  background-color: rgb(240, 234, 226);
+  color: #121212;
+}
+::-moz-selection {
+  background-color: rgb(240, 234, 226);
+  color: #121212;
+}
+
+/* 图片选中样式 */
+img::selection {
+    background-color: var(--selection-bg, rgba(100, 150, 255, 0.3));
+}
+	
+        /* 全局彻底隐藏原生鼠标 */
+        * {
+            cursor: none !important;
+        }
+        /* 可交互元素恢复指针提示，但仍隐藏原生光标 */
+        a, button, .social-link, .nav-item, .typer-component, .theme-fab {
+            cursor: none !important;
+        }
+        .cursor-dot {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background-color: #121212; /* 明亮模式：黑色 */
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: transform 0.05s ease, background-color 0.2s ease;
+        }
+        .cursor-ring {
+            position: fixed;
+            width: 32px;
+            height: 32px;
+            border: 2px solid #121212; /* 明亮模式：黑色 */
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: transform 0.15s ease, border-color 0.2s ease;
+            mix-blend-mode: difference;
+        }
+        /* 深色模式光标颜色：白色 */
+        .dark-theme .cursor-dot {
+            background-color: #ffffff;
+        }
+        .dark-theme .cursor-ring {
+            border-color: #ffffff;
+        }
+    </style>
+
+    <!-- 临时覆盖样式以适配新布局 -->
+    <style>
+        /* 调整顶部栏布局：左侧导航，右侧打字机 */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        /* 打字机容器样式 */
+        #typer-root {
+            flex-shrink: 0;
+            max-width: 300px;
+            width: auto;
+        }
+        /* 主题切换浮动按钮（右下角） */
+        .theme-fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: var(--element-bg);
+            color: var(--text-primary);
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+            z-index: 1000;
+            border-radius: 16px 0 16px 0; /* 保持混合圆角风格 */
+        }
+        .theme-fab:hover {
+            background-color: var(--element-bg-hover);
+            transform: scale(1.05);
+        }
+        /* 移除旧的主题按钮 */
+        .theme-btn {
+            display: none;
+        }
+        /* 确保页面内容不被浮动按钮遮挡 */
+        main {
+            margin-bottom: 4rem;
+        }
+        /* 打字机组件样式微调，使用主题变量 */
+        .typer-component {
+            cursor: pointer;
+            background-color: var(--element-bg);
+            border-radius: 16px 0 16px 0;
+            border: 2px solid var(--border-accent);
+            padding: 0.6rem 1.2rem;
+            min-height: 2.5rem;
+            white-space: pre-wrap;
+            transition: all 0.2s;
+            color: var(--text-primary);
+            font-size: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .typer-component:hover {
+            border-color: var(--text-secondary);
+            color: var(--text-secondary);
+        }
+        /* 小屏幕调整 */
+        @media (max-width: 650px) {
+            .theme-fab {
+                bottom: 1rem;
+                right: 1rem;
+                width: 48px;
+                height: 48px;
+                font-size: 1.5rem;
+            }
+            #typer-root {
+                max-width: 220px;
+            }
+        }
+        /* Lucide 图标统一大小 */
+        .lucide {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+            transition: all 0.2s;
+        }
+    </style>
+</head>
+<body class="light-theme">
+
+    <!-- 自定义鼠标 -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-ring"></div>
+
+    <div class="top-bar">
+        <nav class="selection-bar">
+            <a href="#" class="nav-item active" data-page="profile">PROFILE</a>
+            <a href="#" class="nav-item" data-page="resources">LINKS</a>
+            <a href="#" class="nav-item" data-page="admin">MANAGE</a>
+            <span class="slider"></span>
+        </nav>
+        <div id="typer-root"></div>
+    </div>
+
+    <main>
+        <div class="pages-container">
+            <section id="profile-page" class="page active-page">
+                <br><br><br><br><br><br><br><br><br><br><br><br><br>
+                <div class="profile-container">
+                    <img src="imgs/personal_icon.jpg" alt="awa" class="avatar">
+                    <div class="profile-text">
+                        <h1 class="username">Hello, I'm Zhangker</h1>
+                        <p class="tagline">探索、创造、分享 - 这是我的数字世界</p>
+                        <p class="tagline">新站尚在建设中……</p>
+                        <div class="social-links">
+                            <a href="https://github.com/AsZhangker" target="_blank" rel="noopener" class="social-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-github"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
+                                GitHub
+                            </a>
+                            <a href="https://blog.zker.top/" target="_blank" rel="noopener" class="social-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tv-minimal"><path d="M6 10h12"/><path d="M6 14h12"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg>
+                                Blog
+                            </a>
+                            <a href="https://qm.qq.com/q/G3kSFeFfmS" target="_blank" rel="noopener" class="social-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+                                Q裙
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="resources-page" class="page">
+                <h2>LINKS</h2>
+                <ul class="resource-list">
+                    <li><a href="https://ker-download.zker.top/" class="resource-link" target="_blank" rel="noopener">私有下载站 ▶</a></li>
+					<li><a href="https://blog.zker.top/" class="resource-link" target="_blank" rel="noopener">博客页面 ▶</a></li>
+                    <li><a href="pages/ai.html" class="resource-link" target="_blank" rel="noopener">AI大模型 ▶</a></li>
+                    <li><a href="pages/password.html" class="resource-link" target="_blank" rel="noopener">密码小游戏 ▶</a></li>
+                    <li><a href="pages/mcbook.html" class="resource-link" target="_blank" rel="noopener">MCJE成书生成器 ▶</a></li>
+                    <li><a href="https://ark.zker.top/" class="resource-link" target="_blank" rel="noopener">《明日方舟：终末地》Logo生成器 ▶</a></li>
+                    <br>
+                    <li><a href="https://o.zker.top/" class="resource-link" target="_blank" rel="noopener">◀ 返回旧站</a></li>
+                </ul>
+                <h2>友链</h2>
+                 <ul class="resource-list">
+                    <li><a href="https://www.mcnav.net/" class="resource-link" target="_blank" rel="noopener">MCNav导航站 ▶</a></li>
+                    <li><a href="https://azsu.top/mc/" class="resource-link" target="_blank" rel="noopener">MC素素的生存服务器官网 ▶</a></li>
+                </ul>
+            </section>
+
+            <section id="admin-page" class="page">
+                <h2>Manage-Panel</h2>
+                <p class="admin-note">后台入口</p>
+                <div class="admin-placeholder">提示：需要密码才能进入！</div>
+                <li><a href="https://980765.xyz/admin/login" class="resource-link" target="_blank" rel="noopener">管理站</a></li>
+            </section>
+        </div>
+    </main>
+
+    <!-- 右下角主题切换浮动按钮 (Lucide图标) -->
+    <button id="themeFab" class="theme-fab" aria-label="切换主题">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun" id="themeIcon">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/>
+            <path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/>
+            <path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
+        </svg>
+    </button>
+
+    <script src="js/main.js"></script>
+
+    <!-- 打字机组件 -->
+    <script type="text/babel">
+        const { useEffect, useRef, useState, useCallback } = React;
+        const clientBios = [
+            { text: "感谢Ob提供设计思路awa", count: 0 },
+            { text: "探索、创造、分享", count: 0 },
+            { text: "你好中国！", count: 0 },
+            { text: "https://zker.top", count: 0 },
+            { text: "www.noctiro.moe", count: 0 },
+            { text: "萌ICP备！", count: 0 },
+            { text: "来玩服务器azsu.top", count: 0 },
+            { text: "往人中下面洞里塞炸鸡很舒服", count: 0 },
+            { text: "awa qwq owo ovo qaq", count: 0 },
+            { text: "句末请加半括号（", count: 0 },
+            { text: "关于明天的事，你后天就知道了", count: 0 },
+            { text: "永远不要在晚上搞机！", count: 0 },
+            { text: "我们使用先进的视窗11系统！", count: 0 },
+            { text: "00后到现在没一个人活过30！", count: 0 },
+            { text: "内存=黄金", count: 0 },
+            { text: "去你朋友服务器末地种蘑菇吧！", count: 0 },
+            { text: "rm -rf /* ", count: 0 },
+            { text: "Poweroff", count: 0 },
+            { text: "Arknights~", count: 0 },
+            { text: "Minecart:Jvav", count: 0 },
+            { text: "小猫娘智商一般不高", count: 0 },
+            { text: "服务器IP是127.0.0.1！", count: 0 },
+            { text: "使用i9级显卡！", count: 0 },
+            { text: "这不是bug,这是特性！", count: 0 },
+            { text: "听君一席话，胜听半席话", count: 0 },
+            { text: "一周不见，如隔七日", count: 0 },
+        ];
+
+        function BioTyper() {
+            const biosRef = useRef(JSON.parse(JSON.stringify(clientBios)));
+            const lastIndexRef = useRef(-1);
+            const [display, setDisplay] = useState("");
+            const [chars, setChars] = useState([]);
+            const [index, setIndex] = useState(0);
+            const [step, setStep] = useState("idle");
+            const [isManualRestart, setIsManualRestart] = useState(false);
+            const timeoutRef = useRef(null);
+
+            const pickNext = useCallback(() => {
+                const bios = biosRef.current;
+                const lastIndex = lastIndexRef.current;
+                const available = bios.map((bio, idx) => ({ bio, idx })).filter(({ idx }) => idx !== lastIndex);
+                const pool = available.length ? available : bios.map((bio, idx) => ({ bio, idx }));
+                const weights = pool.map(({ bio }) => 1 / Math.sqrt(bio.count + 1));
+                const total = weights.reduce((sum, w) => sum + w, 0);
+                let r = Math.random() * total;
+                for (let i = 0; i < pool.length; i++) {
+                    r -= weights[i];
+                    if (r <= 0) {
+                        const idx = pool[i].idx;
+                        lastIndexRef.current = idx;
+                        bios[idx].count += 1;
+                        return pool[i].bio.text;
+                    }
+                }
+                lastIndexRef.current = pool[0].idx;
+                bios[pool[0].idx].count += 1;
+                return pool[0].bio.text;
+            }, []);
+
+            const clearTimer = useCallback(() => {
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            }, []);
+
+            useEffect(() => {
+                clearTimer();
+                if (step === "idle") {
+                    const text = pickNext();
+                    setChars(Array.from(text));
+                    setDisplay("");
+                    setIndex(0);
+                    setStep("typing");
+                } else if (step === "typing") {
+                    if (index < chars.length) {
+                        const char = chars[index];
+                        const delay = 75 + Math.random() * 60 + (/[，。？！、：,.?!:]/.test(char) ? 250 : 0);
+                        timeoutRef.current = setTimeout(() => {
+                            setDisplay(prev => prev + char);
+                            setIndex(i => i + 1);
+                        }, delay);
+                    } else setStep("holding");
+                } else if (step === "holding") {
+                    const delay = isManualRestart ? 0 : Math.max(1500, (chars.length / 5) * 1500);
+                    timeoutRef.current = setTimeout(() => {
+                        setStep("deleting");
+                        setIsManualRestart(false);
+                    }, delay);
+                } else if (step === "deleting") {
+                    if (index > 0) {
+                        const delay = 20 + (Math.random() + index / chars.length) * 40;
+                        timeoutRef.current = setTimeout(() => {
+                            setDisplay(chars.slice(0, index - 1).join(""));
+                            setIndex(i => i - 1);
+                        }, delay);
+                    } else timeoutRef.current = setTimeout(() => setStep("idle"), 300);
+                }
+                return clearTimer;
+            }, [step, index, chars, isManualRestart, pickNext, clearTimer]);
+
+            const manualRestart = () => {
+                clearTimer();
+                if (display && step !== "deleting") {
+                    setIsManualRestart(true);
+                    setStep("holding");
+                } else setStep("idle");
+            };
+
+            return (
+                <div onClick={manualRestart} className="typer-component" title="点击切换文本">
+                    {display || "..."}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('typer-root'));
+        root.render(<BioTyper />);
+    </script>
+	
+	<script>
+// 禁止右键菜单
+document.addEventListener('contextmenu', e => {
+  e.preventDefault();
+});
+</script>
+
+    <!-- 主题切换 + 鼠标跟随（修复版） -->
+    <script>
+	
+        // 主题切换（修复图标状态同步）
+        (function() {
+            const body = document.body;
+            const fab = document.getElementById('themeFab');
+            const iconContainer = fab; // 直接操作按钮内的SVG
+
+            // 定义图标SVG
+            const sunIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
+            const moonIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`;
+
+            // 更新图标：根据当前主题显示太阳/月亮
+            function updateThemeIcon() {
+                if (body.classList.contains('light-theme')) {
+                    iconContainer.innerHTML = sunIcon;
+                } else {
+                    iconContainer.innerHTML = moonIcon;
+                }
+            }
+
+            // 切换主题
+            function toggleTheme() {
+                if (body.classList.contains('dark-theme')) {
+                    body.classList.remove('dark-theme');
+                    body.classList.add('light-theme');
+                } else {
+                    body.classList.remove('light-theme');
+                    body.classList.add('dark-theme');
+                }
+                updateThemeIcon(); // 切换后立即更新图标
+                window.dispatchEvent(new Event('themeChanged'));
+            }
+
+            // 绑定点击事件
+            fab.addEventListener('click', toggleTheme);
+
+            // 初始化：页面加载时根据当前主题设置正确图标
+            updateThemeIcon();
+        })();
+
+        // 鼠标跟随（修复版）
+        (function() {
+            const dot = document.querySelector('.cursor-dot');
+            const ring = document.querySelector('.cursor-ring');
+            window.addEventListener('mousemove', e => {
+                const x = e.clientX;
+                const y = e.clientY;
+                dot.style.left = `${x}px`;
+                dot.style.top = `${y}px`;
+                ring.style.left = `${x}px`;
+                ring.style.top = `${y}px`;
+            });
+        })();
+    </script>
+
+    <script>
+        (function() {
+            document.addEventListener('DOMContentLoaded', () => {
+                const navItems = document.querySelectorAll('.nav-item');
+                const pages = document.querySelectorAll('.page');
+                const slider = document.querySelector('.slider');
+                const selectionBar = document.querySelector('.selection-bar');
+
+                function updateSlider(targetItem = document.querySelector('.nav-item.active')) {
+                    if (!targetItem) return;
+                    const itemRect = targetItem.getBoundingClientRect();
+                    const barRect = selectionBar.getBoundingClientRect();
+                    slider.style.left = `${itemRect.left - barRect.left}px`;
+                    slider.style.width = `${itemRect.width}px`;
+                }
+
+                function switchPage(pageId, clickedItem) {
+                    if (clickedItem) updateSlider(clickedItem);
+                    const newPage = document.getElementById(`${pageId}-page`);
+                    const oldPage = document.querySelector('.page.active-page');
+                    if (!newPage || newPage === oldPage) return;
+                    navItems.forEach(item => item.classList.remove('active'));
+                    if (clickedItem) clickedItem.classList.add('active');
+                    if (oldPage) oldPage.classList.remove('active-page');
+                    newPage.classList.add('active-page');
+                }
+
+                navItems.forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const page = item.dataset.page;
+                        if (page) switchPage(page, item);
+                    });
+                });
+
+                window.addEventListener('resize', () => {
+                    const activeItem = document.querySelector('.nav-item.active');
+                    if (activeItem) updateSlider(activeItem);
+                });
+
+                window.addEventListener('themeChanged', () => {
+                    setTimeout(() => {
+                        const activeItem = document.querySelector('.nav-item.active');
+                        if (activeItem) updateSlider(activeItem);
+                    }, 50);
+                });
+
+                switchPage('profile', document.querySelector('.nav-item[data-page="profile"]'));
+            });
+        })();
+    </script>
+
+</body>
+<a href="https://icp.gov.moe/?keyword=20266606" target="_blank">萌ICP备20266606号</a> © 2026 Ker. All rights reserved.
+</html>

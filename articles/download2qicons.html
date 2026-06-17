@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试 - 文章区域</title>
+    <link rel="icon" type="image/png" href="../../assets/images/favicon.png">
+    <!-- 现代化CSS框架 -->
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --primary-light: #e8f0fe;
+            --secondary-color: #5f6368;
+            --background-color: #f8f9fa;
+            --surface-color: #ffffff;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --border-radius: 12px;
+            --shadow: 0 4px 12px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #8ab4f8;
+            --primary-light: #1a2a4c;
+            --secondary-color: #9aa0a6;
+            --background-color: #121212;
+            --surface-color: #1e1e1e;
+            --text-primary: #e8eaed;
+            --text-secondary: #9aa0a6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: var(--transition);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            position: fixed;
+            left: -300px;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: var(--surface-color);
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            transition: var(--transition);
+            padding: 24px 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.open {
+            left: 0;
+        }
+
+        .sidebar-header {
+            padding: 0 24px 24px;
+            border-bottom: 1px solid var(--primary-light);
+            margin-bottom: 16px;
+        }
+
+        .sidebar-header img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 12px;
+            border: 2px solid var(--primary-color);
+        }
+
+        .sidebar-header h2 {
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .sidebar-menu {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 16px;
+        }
+
+        .sidebar-menu ul {
+            list-style: none;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 4px;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            border-radius: 8px;
+            transition: var(--transition);
+            font-size: 0.95rem;
+        }
+
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .sidebar-menu i {
+            margin-right: 12px;
+            font-size: 1.1rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* 侧边栏切换按钮 */
+        .sidebar-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--surface-color);
+            border: none;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .sidebar-toggle:hover {
+            transform: scale(1.05);
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* 主内容区 */
+        .content-wrapper {
+            margin-left: 0;
+            transition: var(--transition);
+        }
+
+        .content-wrapper.sidebar-open {
+            margin-left: 0;
+        }
+
+        .app-header {
+            background: var(--surface-color);
+            padding: 16px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .app-title {
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 24px;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--surface-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            margin-bottom: 24px;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        .section-title {
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--primary-light);
+        }
+
+        /* 文章内容样式 */
+        .article-content {
+            line-height: 1.8;
+        }
+
+        .article-content h1 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--primary-light);
+        }
+
+        .article-content h2 {
+            color: var(--text-primary);
+            font-size: 1.4rem;
+            margin: 24px 0 16px;
+        }
+
+        .article-content h3 {
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            margin: 20px 0 12px;
+        }
+
+        .article-content p {
+            margin-bottom: 16px;
+        }
+
+        .article-content ul, .article-content ol {
+            margin: 16px 0;
+            padding-left: 32px;
+        }
+
+        .article-content li {
+            margin-bottom: 8px;
+        }
+
+        .article-content a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .article-content a:hover {
+            text-decoration: underline;
+        }
+
+        /* 响应式设计 */
+        @media (min-width: 768px) {
+            .sidebar {
+                left: 0;
+                z-index: auto;
+            }
+            
+            .sidebar-toggle {
+                display: none;
+            }
+            
+            .content-wrapper {
+                margin-left: 280px;
+            }
+        }
+
+        /* 主题切换按钮 */
+        .theme-toggle {
+            background: var(--primary-light);
+            color: var(--primary-color);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(30deg);
+            background: var(--primary-color);
+            color: white;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="../../assets/images/personal_icon.jpg" alt="个人头像">
+            <h2>Zhangker</h2>
+        </div>
+        <nav class="sidebar-menu">
+            <ul>
+                <li><a href="../../index.html"><i class="fas fa-home"></i> 首页</a></li>
+                <li><a href="../projects.html"><i class="fas fa-th-large"></i> 项目</a></li>
+                <li><a href="../about.html"><i class="fas fa-user"></i> 关于</a></li>
+                <li><a href="../contact.html"><i class="fas fa-envelope"></i> 联系</a></li>
+                <li><a href="../minecraft.html"><i class="fa fa-cubes"></i> MC世界</a></li>
+                <li><a href="../ai.html"><i class="fa fa-mouse-pointer"></i> AI导航</a></li>
+                <li><a href="../clock.html"><i class="fas fa-clock"></i> 时钟</a></li>
+                <li><a href="../passwd.html"><i class="fa fa-leaf"></i> 密码游戏</a></li>
+                <li><a href="../articles/index.html" class="active"><i class="fas fa-book"></i> 文章区域</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- 侧边栏切换按钮 -->
+    <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- 主题切换按钮 -->
+    <button class="theme-toggle" id="themeToggle">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <!-- 主内容区 -->
+    <div class="content-wrapper" id="contentWrapper">
+       
+
+        <main class="main-content">
+    <div class="card">
+        <h1 class="section-title">素素的生存服-材质包下载页</h1>
+        <div class="article-content">
+            <p>素素的生存服务器二区材质包下载和材质包贴图一览表下载</p>
+            
+            <h2>使用ia材质插件</h2>
+            <ul>
+                <li><strong>下载材质包（本站下载,内陆省份较慢）</strong> - <a href="./items/server_pack.zip">-点击下载-</a></li>
+                <li><strong>下载材质包（蓝奏盘）</strong> - <a href="https://kerawa.lanzouo.com/id06f3b9osri">=点击跳转=</a></li>
+                <li><strong>下载开发者工具</strong> - 暂时只对管理组成员开放</li>
+                <li><strong>下载贴图列表</strong> - <a href="./items/1.txt">-点击下载-</a></li>
+            </ul>
+
+        </div>
+    </div>
+</main>
+    </div>
+
+    <script>
+        // 侧边栏切换功能
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const contentWrapper = document.getElementById('contentWrapper');
+
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            contentWrapper.classList.toggle('sidebar-open');
+        });
+
+        // 主题切换功能
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        
+        // 检查本地存储中的主题设置
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        if (savedTheme === 'dark') {
+            body.setAttribute('data-theme', 'dark');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = body.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                body.removeAttribute('data-theme');
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // 确保侧边栏在小屏幕上默认关闭
+        if (window.innerWidth < 768) {
+            contentWrapper.classList.remove('sidebar-open');
+        } else {
+            contentWrapper.classList.add('sidebar-open');
+        }
+    </script>
+</body>
+</html>

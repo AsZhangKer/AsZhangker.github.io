@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KerMC1.21.5+成书生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        .left-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .right-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-align: center;
+        }
+        
+        h2 {
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-weight: bold;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .checkbox-group label {
+            margin: 0;
+            font-weight: normal;
+        }
+        
+        .editor-container {
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 400px;
+            line-height: 1.8;
+            font-size: 16px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-y: auto;
+            position: relative;
+            font-family: 'Minecraft', monospace;
+            cursor: text;
+        }
+        
+        .character {
+            display: inline;
+            position: relative;
+            padding: 1px 0;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            cursor: text;
+        }
+        
+        .character.selected {
+            background-color: rgba(102, 126, 234, 0.3);
+            border-radius: 3px;
+        }
+        
+        .character.space {
+            position: relative;
+            padding: 0 4px;
+        }
+        
+        .character.space::after {
+            content: '·';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(0,0,0,0.3);
+            font-weight: bold;
+            pointer-events: none;
+        }
+        
+        .character.newline {
+            display: block;
+            height: 1.5em;
+            width: 100%;
+        }
+        
+        .character.newline::after {
+            content: '↵';
+            color: rgba(0,0,0,0.3);
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        
+        .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.2em;
+            background-color: #667eea;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+            margin: 0 1px;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .color-picker-container {
+            position: absolute;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            padding: 20px;
+            z-index: 1000;
+            display: none;
+            width: 350px;
+        }
+        
+        .color-picker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .close-picker {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .color-swatch {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        
+        .color-swatch:hover {
+            transform: scale(1.1);
+            border-color: #333;
+        }
+        
+        .color-swatch.selected {
+            border-color: #333;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #667eea;
+        }
+        
+        .custom-color {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .custom-color input {
+            flex: 1;
+            font-family: monospace;
+            text-transform: uppercase;
+        }
+        
+        .preview-color {
+            width: 40px;
+            height: 40px;
+            border-radius: 5px;
+            border: 2px solid #ddd;
+        }
+        
+        .format-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .format-btn {
+            padding: 8px 15px;
+            background: #f1f3f4;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+        
+        .format-btn:hover {
+            background: #e8eaed;
+        }
+        
+        .format-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .page-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .page-btn {
+            padding: 8px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .page-btn:hover {
+            background: #5a67d8;
+        }
+        
+        .page-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .page-info {
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .output-container {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #00ff00;
+            white-space: pre-wrap;
+            word-break: break-all;
+            overflow-y: auto;
+            max-height: 300px;
+            border: 2px solid #333;
+            line-height: 1.5;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .action-btn {
+            padding: 12px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .action-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .action-btn.copy {
+            background: #10b981;
+        }
+        
+        .action-btn.copy:hover {
+            background: #0da271;
+        }
+        
+        .action-btn.test {
+            background: #f59e0b;
+        }
+        
+        .action-btn.test:hover {
+            background: #d97706;
+        }
+        
+        .server-mode-notice {
+            background: #fffbeb;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #92400e;
+        }
+        
+        @font-face {
+            font-family: 'Minecraft';
+            src: url('https://fonts.cdnfonts.com/s/31315/Minecraftia.woff') format('woff');
+        }
+        
+        .editor-container {
+            font-family: 'Minecraft', monospace;
+            font-size: 14px;
+        }
+        
+        .warning {
+            background: #fef2f2;
+            border: 2px solid #f87171;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #991b1b;
+        }
+        
+        .info-box {
+            background: #eff6ff;
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #1e40af;
+        }
+        
+        .text-input-container {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        
+        .text-input {
+            width: 100%;
+            min-height: 40px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Minecraft', monospace;
+            font-size: 14px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+        
+        .text-input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        .character.highlighted {
+            background-color: rgba(255, 215, 0, 0.3);
+        }
+        
+        .quick-tips {
+            background: #f0f9ff;
+            border: 2px solid #bae6fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #0369a1;
+        }
+        
+        .quick-tips h4 {
+            margin: 0 0 10px 0;
+            color: #0284c7;
+        }
+        
+        .quick-tips ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .quick-tips li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <h1>KerHTML系列-1.成书指令生成器</h1>
+            
+            <div class="form-group">
+                <label for="book-title">署名标题(Title)</label>
+                <input type="text" id="book-title" value="我的书" placeholder="输入书名">
+            </div>
+            
+            <div class="form-group">
+                <label for="book-author">署名作者(Author)</label>
+                <input type="text" id="book-author" value="玩家" placeholder="输入作者名">
+            </div>
+            
+            <div class="form-group">
+                <label>客官要来点啥~</label>
+                <select id="command-type">
+                    <option value="give">/give一本书</option>
+                    <option value="summon">/summon一个item</option>
+                    <option value="setblock">/setblock一个箱子</option>
+                </select>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="server-mode">
+                <label for="server-mode">服务器模式（考虑指令占用，使用 /minecraft:give）</label>
+            </div>
+            
+            <div id="extra-options" style="display: none;">
+                <div class="form-group">
+				<label for="coordinates">客官想把这玩意放在哪(世界上的坐标)</label>
+                    <input type="text" id="coordinates" value="~ ~ ~" placeholder="x y z">
+                </div>
+                <div class="form-group">
+                    <label for="item-slot">客官想把这玩意放在什么地方(箱子的槽位)</label>
+                    <input type="number" id="item-slot" value="0" min="0" max="26">
+                </div>
+            </div>
+            
+            <div class="warning">
+                <strong>注意：</strong><br>
+                这个程序支持的是Minecraft JE 1.21.5+的堆叠组件写法！
+            </div>
+            
+            <div class="quick-tips">
+                <h4>说明：</h4>
+                <ul>
+                    <li>在下方输入文本内容</li>
+                    <li>在预览区鼠标单击一下后移动选择文字,下方托盘设置格式</li>
+                    <li>换行直接按回车键即可</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="right-panel">
+            <div>
+                <h2>编辑区域</h2>
+                
+                <div class="page-controls">
+                    <div>
+                        <button class="page-btn" id="prev-page">←</button>
+                        <span class="page-info">第 <span id="current-page">1</span>/<span id="total-pages">1</span> 页</span>
+                        <button class="page-btn" id="next-page">→</button>
+                    </div>
+                    <button class="page-btn" id="add-page">＋</button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="text-input">输入区域</label>
+                    <div class="text-input-container">
+                        <textarea id="text-input" class="text-input" placeholder="在这里输入页面内容,Enter键换行...">成书指令生成器ByKer
+3A（三个ai）大作！
+
+单击鼠标后移动鼠标选中文字，然后设置颜色和格式。</textarea>
+                    </div>
+                </div>
+                
+                <div class="editor-container" id="editor-preview">
+                    <!-- 预览内容将通过JS动态生成 -->
+                </div>
+                
+                <div class="format-buttons">
+                    <button class="format-btn" data-format="bold" title="粗体 (Ctrl+B)">
+                        <span style="font-weight: bold;">B</span>
+                    </button>
+                    <button class="format-btn" data-format="italic" title="斜体 (Ctrl+I)">
+                        <span style="font-style: italic;">I</span>
+                    </button>
+                    <button class="format-btn" data-format="underline" title="下划线 (Ctrl+U)">
+                        <span style="text-decoration: underline;">U</span>
+                    </button>
+                    <button class="format-btn" data-format="strikethrough" title="删除线">
+                        <span style="text-decoration: line-through;">S</span>
+                    </button>
+                    <button class="format-btn" id="open-color-picker" title="设置颜色 (Ctrl+Shift+C)">
+                        颜色
+                    </button>
+                    <button class="format-btn" id="clear-format" title="清除格式">
+                        清除格式
+                    </button>
+                </div>
+                
+                <div class="quick-tips">
+                    <h4>快捷键：</h4>
+                    <ul>
+                        <li><strong>Ctrl+B</strong>：粗体</li>
+                        <li><strong>Ctrl+I</strong>：斜体</li>
+                        <li><strong>Ctrl+U</strong>：下划线</li>
+                        <li><strong>Ctrl+Shift+C</strong>：打开颜色选择器</li>
+                        <li><strong>Ctrl+A</strong>：全选当前页</li>
+                        <li><strong>Escape</strong>：取消选择</li>
+                        <li><strong>Shift+点击</strong>：扩展选择范围</li>
+                        <li><strong>Ctrl+点击</strong>：添加/移除选择</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div>
+                <h2>生成的指令</h2>
+                <div class="output-container" id="output">
+// 生成的指令将显示在这里
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn" id="generate-btn">
+                        生成指令
+                    </button>
+                    <button class="action-btn copy" id="copy-btn">
+                        复制指令
+                    </button>
+                    <button class="action-btn test" id="test-btn">
+                        测试指令
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 颜色选择器 -->
+    <div class="color-picker-container" id="color-picker">
+        <div class="color-picker-header">
+            <h3>颜色</h3>
+            <button class="close-picker">&times;</button>
+        </div>
+        
+        <div class="color-palette" id="color-palette">
+            <!-- 颜色将通过JS动态生成 -->
+        </div>
+        
+        <div class="custom-color">
+            <input type="text" id="custom-color-input" placeholder="#RRGGBB" maxlength="7">
+            <div class="preview-color" id="custom-color-preview" style="background-color: #FF0000;"></div>
+        </div>
+        
+        <div class="info-box" style="margin-top: 10px;">
+            输入#开头的十六进制颜色或选取默认颜色
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentPage = 1;
+        let totalPages = 1;
+        let pagesData = {};
+        let selectedCharacters = new Set(); // 使用Set存储选中的字符索引
+        let selectionRange = null;
+        let isSelecting = false;
+        let selectionStartIndex = null;
+        
+        // 预设颜色
+        const presetColors = [
+            '#FFFFFF', '#FF5555', '#55FF55', '#5555FF', '#FFFF55', '#FF55FF', '#55FFFF', '#FFAA00',
+            '#FFAD00', '#AA00AA', '#00AAAA', '#000000', '#AAAAAA', '#D2691E', '#8B4513', '#FF6B6B',
+            '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE',
+            '#85C1E9', '#F8C471', '#82E0AA', '#F1948A', '#85C1E9', '#F7DC6F', '#D2B4DE', '#A9DFBF',
+            '#FAD7A0', '#D5DBDB', '#F5B7B1', '#AED6F1', '#F9E79F', '#D5F4E6', '#FADBD8', '#D6EAF8'
+        ];
+        
+        // Minecraft格式配置
+        const formatMapping = {
+            'bold': 'bold',
+            'italic': 'italic',
+            'underline': 'underlined',
+            'strikethrough': 'strikethrough'
+        };
+        
+        // 初始化编辑器
+        function initEditor() {
+            // 初始化第一页
+            pagesData[1] = {
+                content: "欢迎使用Ker成书生成器！\n这是第1页内容。\n你可以单击后移动鼠标选中文字，然后设置颜色和格式。",
+                characters: []
+            };
+            
+            // 解析第一页内容
+            parseContentToCharacters(1);
+            
+            // 渲染编辑器内容
+            renderEditorContent();
+            
+            // 初始化颜色选择器
+            initColorPicker();
+            
+            // 设置事件监听器
+            setupEventListeners();
+            
+            // 更新页面显示
+            updatePageDisplay();
+            
+            // 初始生成指令
+            generateCommand();
+        }
+        
+        // 解析内容为字符数据
+        function parseContentToCharacters(pageNum) {
+            const pageData = pagesData[pageNum];
+            if (!pageData) return;
+            
+            const content = pageData.content || '';
+            const oldCharacters = pageData.characters || [];
+            
+            // 创建字符映射，保留已有字符的格式
+            const charMap = new Map();
+            oldCharacters.forEach((char, index) => {
+                if (index < content.length) {
+                    charMap.set(index, {
+                        ...char,
+                        char: content[index]
+                    });
+                }
+            });
+            
+            // 创建新的字符数组
+            pageData.characters = [];
+            
+            for (let i = 0; i < content.length; i++) {
+                if (charMap.has(i)) {
+                    // 保留原有字符的格式
+                    pageData.characters.push(charMap.get(i));
+                } else {
+                    // 新增字符使用默认格式
+                    pageData.characters.push({
+                        char: content[i],
+                        color: '#FFFFFF',
+                        bold: false,
+                        italic: false,
+                        underlined: false,
+                        strikethrough: false
+                    });
+                }
+            }
+        }
+        
+        // 渲染编辑器内容（预览）
+        function renderEditorContent() {
+            const editor = document.getElementById('editor-preview');
+            const textInput = document.getElementById('text-input');
+            
+            if (!editor || !textInput) return;
+            
+            const pageData = pagesData[currentPage];
+            if (!pageData) return;
+            
+            // 更新文本输入框
+            textInput.value = pageData.content || '';
+            
+            // 清空预览区域
+            editor.innerHTML = '';
+            
+            // 如果没有字符数据，重新解析
+            if (!pageData.characters || pageData.characters.length === 0) {
+                parseContentToCharacters(currentPage);
+            }
+            
+            // 渲染每个字符
+            pageData.characters.forEach((char, index) => {
+                const charSpan = document.createElement('span');
+                charSpan.className = 'character';
+                charSpan.dataset.index = index;
+                
+                // 特殊字符处理
+                if (char.char === ' ') {
+                    charSpan.classList.add('space');
+                    charSpan.textContent = ' ';
+                } else if (char.char === '\n') {
+                    charSpan.classList.add('newline');
+                    const br = document.createElement('br');
+                    editor.appendChild(br);
+                    editor.appendChild(charSpan);
+                    return;
+                } else if (char.char === '\t') {
+                    charSpan.textContent = '    ';
+                } else {
+                    charSpan.textContent = char.char;
+                }
+                
+                // 应用样式
+                let style = '';
+                if (char.color && char.color !== '#FFFFFF') {
+                    style += `color: ${char.color};`;
+                }
+                if (char.bold) style += 'font-weight: bold;';
+                if (char.italic) style += 'font-style: italic;';
+                if (char.underlined) style += 'text-decoration: underline;';
+                if (char.strikethrough) style += 'text-decoration: line-through;';
+                
+                if (style) {
+                    charSpan.style.cssText = style;
+                }
+                
+                // 选中状态
+                if (selectedCharacters.has(index)) {
+                    charSpan.classList.add('selected');
+                }
+                
+                // 鼠标事件
+                charSpan.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    isSelecting = true;
+                    
+                    if (e.shiftKey && selectedCharacters.size > 0) {
+                        // Shift+点击：扩展选择范围
+                        const minIndex = Math.min(...selectedCharacters);
+                        const maxIndex = Math.max(...selectedCharacters);
+                        const currentIndex = parseInt(charSpan.dataset.index);
+                        
+                        selectedCharacters.clear();
+                        const start = Math.min(minIndex, currentIndex);
+                        const end = Math.max(maxIndex, currentIndex);
+                        
+                        for (let i = start; i <= end; i++) {
+                            selectedCharacters.add(i);
+                        }
+                    } else if (e.ctrlKey || e.metaKey) {
+                        // Ctrl+点击：添加/移除选择
+                        if (selectedCharacters.has(index)) {
+                            selectedCharacters.delete(index);
+                        } else {
+                            selectedCharacters.add(index);
+                        }
+                    } else {
+                        // 普通点击：单选
+                        selectedCharacters.clear();
+                        selectedCharacters.add(index);
+                    }
+                    
+                    selectionStartIndex = index;
+                    renderEditorContent();
+                    updateFormatButtons();
+                });
+                
+                charSpan.addEventListener('mouseover', () => {
+                    if (isSelecting && selectionStartIndex !== null) {
+                        const currentIndex = parseInt(charSpan.dataset.index);
+                        const start = Math.min(selectionStartIndex, currentIndex);
+                        const end = Math.max(selectionStartIndex, currentIndex);
+                        
+                        selectedCharacters.clear();
+                        for (let i = start; i <= end; i++) {
+                            selectedCharacters.add(i);
+                        }
+                        renderEditorContent();
+                        updateFormatButtons();
+                    }
+                });
+                
+                editor.appendChild(charSpan);
+            });
+            
+            // 更新格式按钮状态
+            updateFormatButtons();
+        }
+        
+        // 初始化颜色选择器
+        function initColorPicker() {
+            const palette = document.getElementById('color-palette');
+            palette.innerHTML = '';
+            
+            // 添加预设颜色
+            presetColors.forEach(color => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.style.backgroundColor = color;
+                swatch.dataset.color = color;
+                swatch.title = color;
+                
+                swatch.addEventListener('click', function() {
+                    applyColorToSelection(this.dataset.color);
+                    hideColorPicker();
+                });
+                
+                palette.appendChild(swatch);
+            });
+            
+            // 自定义颜色输入
+            const customInput = document.getElementById('custom-color-input');
+            const preview = document.getElementById('custom-color-preview');
+            
+            customInput.addEventListener('input', function() {
+                let color = this.value.toUpperCase();
+                
+                // 自动添加#号
+                if (color && color[0] !== '#') {
+                    color = '#' + color;
+                    this.value = color;
+                }
+                
+                // 验证颜色格式
+                if (/^#[0-9A-F]{6}$/i.test(color)) {
+                    preview.style.backgroundColor = color;
+                }
+            });
+            
+            customInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const color = this.value;
+                    if (/^#[0-9A-F]{6}$/i.test(color)) {
+                        applyColorToSelection(color);
+                        hideColorPicker();
+                    }
+                }
+            });
+            
+            // 关闭按钮
+            document.querySelector('.close-picker').addEventListener('click', hideColorPicker);
+            
+            // 点击外部关闭
+            document.addEventListener('click', function(e) {
+                const picker = document.getElementById('color-picker');
+                if (picker.style.display === 'block' && 
+                    !picker.contains(e.target) && 
+                    !e.target.closest('#open-color-picker')) {
+                    hideColorPicker();
+                }
+            });
+        }
+        
+        // 显示颜色选择器
+        function showColorPicker() {
+            const picker = document.getElementById('color-picker');
+            
+            // 显示在屏幕中央
+            picker.style.position = 'fixed';
+            picker.style.top = '50%';
+            picker.style.left = '50%';
+            picker.style.transform = 'translate(-50%, -50%)';
+            picker.style.display = 'block';
+            
+            // 如果有选中的字符，显示其颜色
+            if (selectedCharacters.size > 0) {
+                const firstIndex = Array.from(selectedCharacters)[0];
+                const pageData = pagesData[currentPage];
+                if (pageData && pageData.characters[firstIndex]) {
+                    const charData = pageData.characters[firstIndex];
+                    const colorInput = document.getElementById('custom-color-input');
+                    const colorPreview = document.getElementById('custom-color-preview');
+                    
+                    if (charData.color && charData.color !== '#FFFFFF') {
+                        colorInput.value = charData.color;
+                        colorPreview.style.backgroundColor = charData.color;
+                    } else {
+                        colorInput.value = '#FFFFFF';
+                        colorPreview.style.backgroundColor = '#FFFFFF';
+                    }
+                }
+            }
+        }
+        
+        // 隐藏颜色选择器
+        function hideColorPicker() {
+            document.getElementById('color-picker').style.display = 'none';
+        }
+        
+        // 应用颜色到选中的字符
+        function applyColorToSelection(color) {
+            if (selectedCharacters.size === 0) return;
+            
+            const pageData = pagesData[currentPage];
+            if (!pageData) return;
+            
+            selectedCharacters.forEach(index => {
+                if (pageData.characters[index]) {
+                    pageData.characters[index].color = color;
+                }
+            });
+            
+            renderEditorContent();
+            generateCommand();
+        }
+        
+        // 应用格式到选中的字符
+        function applyFormatToSelection(format) {
+            if (selectedCharacters.size === 0) return;
+            
+            const pageData = pagesData[currentPage];
+            if (!pageData) return;
+            
+            const mcFormat = formatMapping[format];
+            if (!mcFormat) return;
+            
+            // 获取第一个选中字符的当前格式状态
+            const firstIndex = Array.from(selectedCharacters)[0];
+            const firstChar = pageData.characters[firstIndex];
+            const currentState = firstChar ? firstChar[mcFormat] : false;
+            
+            // 应用到所有选中字符
+            selectedCharacters.forEach(index => {
+                if (pageData.characters[index]) {
+                    // 如果第一个字符是开启状态，则全部开启；否则全部关闭
+                    pageData.characters[index][mcFormat] = !currentState;
+                }
+            });
+            
+            renderEditorContent();
+            updateFormatButtons();
+            generateCommand();
+        }
+        
+        // 清除选中字符的格式
+        function clearFormat() {
+            if (selectedCharacters.size === 0) return;
+            
+            const pageData = pagesData[currentPage];
+            if (!pageData) return;
+            
+            selectedCharacters.forEach(index => {
+                if (pageData.characters[index]) {
+                    pageData.characters[index].color = '#FFFFFF';
+                    pageData.characters[index].bold = false;
+                    pageData.characters[index].italic = false;
+                    pageData.characters[index].underlined = false;
+                    pageData.characters[index].strikethrough = false;
+                }
+            });
+            
+            renderEditorContent();
+            updateFormatButtons();
+            generateCommand();
+        }
+        
+        // 更新格式按钮状态
+        function updateFormatButtons() {
+            if (selectedCharacters.size === 0) {
+                // 没有选中字符，重置按钮状态
+                document.querySelectorAll('.format-btn[data-format]').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                return;
+            }
+            
+            const pageData = pagesData[currentPage];
+            if (!pageData) return;
+            
+            // 检查所有选中字符的格式是否一致
+            const firstIndex = Array.from(selectedCharacters)[0];
+            const firstChar = pageData.characters[firstIndex];
+            
+            if (!firstChar) return;
+            
+            // 更新每个格式按钮
+            Object.keys(formatMapping).forEach(format => {
+                const button = document.querySelector(`.format-btn[data-format="${format}"]`);
+                const mcFormat = formatMapping[format];
+                
+                if (button) {
+                    // 检查所有选中字符是否都有相同的格式状态
+                    let allSame = true;
+                    let firstState = firstChar[mcFormat];
+                    
+                    selectedCharacters.forEach(index => {
+                        const char = pageData.characters[index];
+                        if (char && char[mcFormat] !== firstState) {
+                            allSame = false;
+                        }
+                    });
+                    
+                    if (allSame && firstState) {
+                        button.classList.add('active');
+                    } else {
+                        button.classList.remove('active');
+                    }
+                }
+            });
+        }
+        
+        // 添加新页面
+        function addNewPage() {
+            totalPages++;
+            currentPage = totalPages;
+            
+            pagesData[currentPage] = {
+                content: `这是第${currentPage}页内容。`,
+                characters: []
+            };
+            
+            parseContentToCharacters(currentPage);
+            selectedCharacters.clear();
+            updatePageDisplay();
+            renderEditorContent();
+            generateCommand();
+        }
+        
+        // 切换页面
+        function switchPage(pageNum) {
+            if (pageNum < 1 || pageNum > totalPages) return;
+            
+            currentPage = pageNum;
+            selectedCharacters.clear();
+            updatePageDisplay();
+            renderEditorContent();
+            hideColorPicker();
+        }
+        
+        // 更新页面显示
+        function updatePageDisplay() {
+            document.getElementById('current-page').textContent = currentPage;
+            document.getElementById('total-pages').textContent = totalPages;
+            
+            // 更新按钮状态
+            document.getElementById('prev-page').disabled = currentPage <= 1;
+            document.getElementById('next-page').disabled = currentPage >= totalPages;
+        }
+        
+        // 生成指令
+        function generateCommand() {
+            const title = document.getElementById('book-title').value || '我的书';
+            const author = document.getElementById('book-author').value || '玩家';
+            const commandType = document.getElementById('command-type').value;
+            const serverMode = document.getElementById('server-mode').checked;
+            
+            // 收集所有页面数据
+            const pages = [];
+            
+            for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                const pageData = pagesData[pageNum];
+                if (!pageData || !pageData.characters || pageData.characters.length === 0) {
+                    pages.push([[""]]);
+                    continue;
+                }
+                
+                // 优化：合并相同格式的连续字符
+                const segments = [];
+                let currentSegment = null;
+                
+                pageData.characters.forEach(charData => {
+                    const segmentKey = `${charData.color || '#FFFFFF'}-${charData.bold}-${charData.italic}-${charData.underlined}-${charData.strikethrough}`;
+                    
+                    if (currentSegment && currentSegment.key === segmentKey) {
+                        // 合并到当前段
+                        currentSegment.text += charData.char;
+                    } else {
+                        // 开始新段
+                        if (currentSegment) {
+                            segments.push(currentSegment);
+                        }
+                        currentSegment = {
+                            key: segmentKey,
+                            text: charData.char,
+                            color: charData.color,
+                            bold: charData.bold,
+                            italic: charData.italic,
+                            underlined: charData.underlined,
+                            strikethrough: charData.strikethrough
+                        };
+                    }
+                });
+                
+                // 添加最后一个段
+                if (currentSegment) {
+                    segments.push(currentSegment);
+                }
+                
+                // 转换为JSON格式
+                const jsonSegments = segments.map(segment => {
+                    const obj = {text: segment.text};
+                    if (segment.color && segment.color !== '#FFFFFF') obj.color = segment.color;
+                    if (segment.bold) obj.bold = true;
+                    if (segment.italic) obj.italic = true;
+                    if (segment.underlined) obj.underlined = true;
+                    if (segment.strikethrough) obj.strikethrough = true;
+                    return obj;
+                });
+                
+                // 添加到页面数组
+                if (jsonSegments.length > 0) {
+                    pages.push([jsonSegments]);
+                } else {
+                    pages.push([[""]]);
+                }
+            }
+            
+            // 生成指令
+            let command = '';
+            const pagesJson = JSON.stringify(pages).replace(/"([^"]+)":/g, '$1:');
+            
+            if (commandType === 'give') {
+                // 修正服务器模式：应该是 /minecraft:give 而不是 minecraft:/give
+                const commandPrefix = serverMode ? '/minecraft:give' : '/give';
+                command = `${commandPrefix} @p minecraft:written_book[minecraft:written_book_content={title:"${title}",author:"${author}",pages:${pagesJson}}]`;
+            } else if (commandType === 'summon') {
+                const coordinates = document.getElementById('coordinates').value || '~ ~ ~';
+                command = `/summon minecraft:item ${coordinates} {Item:{id:"minecraft:written_book",count:1,components:{"minecraft:written_book_content":{title:"${title}",author:"${author}",pages:${pagesJson}}}}}`;
+            } else if (commandType === 'setblock') {
+                const coordinates = document.getElementById('coordinates').value || '~ ~ ~';
+                const slot = document.getElementById('item-slot').value || '0';
+                command = `/setblock ${coordinates} minecraft:barrel[facing=east,open=false]{Items:[{Slot:${slot}b,count:1,id:"minecraft:written_book",components:{"minecraft:written_book_content":{author:"${author}",pages:${pagesJson},title:"${title}"}}}]}`;
+            }
+            
+            // 显示指令
+            document.getElementById('output').textContent = command;
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 文本输入变化
+            document.getElementById('text-input').addEventListener('input', function() {
+                const pageData = pagesData[currentPage];
+                if (pageData) {
+                    pageData.content = this.value;
+                    parseContentToCharacters(currentPage);
+                    renderEditorContent();
+                    generateCommand();
+                }
+            });
+            
+            // 指令类型切换
+            document.getElementById('command-type').addEventListener('change', function() {
+                const extraOptions = document.getElementById('extra-options');
+                if (this.value === 'give') {
+                    extraOptions.style.display = 'none';
+                } else {
+                    extraOptions.style.display = 'block';
+                }
+                generateCommand();
+            });
+            
+            // 服务器模式切换
+            document.getElementById('server-mode').addEventListener('change', generateCommand);
+            
+            // 书本信息变化
+            document.getElementById('book-title').addEventListener('input', generateCommand);
+            document.getElementById('book-author').addEventListener('input', generateCommand);
+            document.getElementById('coordinates').addEventListener('input', generateCommand);
+            document.getElementById('item-slot').addEventListener('input', generateCommand);
+            
+            // 页面控制
+            document.getElementById('prev-page').addEventListener('click', () => switchPage(currentPage - 1));
+            document.getElementById('next-page').addEventListener('click', () => switchPage(currentPage + 1));
+            document.getElementById('add-page').addEventListener('click', addNewPage);
+            
+            // 格式按钮
+            document.querySelectorAll('.format-btn[data-format]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const format = this.dataset.format;
+                    applyFormatToSelection(format);
+                });
+            });
+            
+            // 颜色选择器按钮
+            document.getElementById('open-color-picker').addEventListener('click', showColorPicker);
+            
+            // 清除格式按钮
+            document.getElementById('clear-format').addEventListener('click', clearFormat);
+            
+            // 鼠标抬起时结束选择
+            document.addEventListener('mouseup', () => {
+                isSelecting = false;
+                selectionStartIndex = null;
+            });
+            
+            // 键盘快捷键
+            document.addEventListener('keydown', function(e) {
+                // Ctrl+B: 粗体
+                if (e.ctrlKey && e.key === 'b') {
+                    e.preventDefault();
+                    applyFormatToSelection('bold');
+                }
+                // Ctrl+I: 斜体
+                else if (e.ctrlKey && e.key === 'i') {
+                    e.preventDefault();
+                    applyFormatToSelection('italic');
+                }
+                // Ctrl+U: 下划线
+                else if (e.ctrlKey && e.key === 'u') {
+                    e.preventDefault();
+                    applyFormatToSelection('underline');
+                }
+                // Ctrl+Shift+C: 颜色选择器
+                else if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+                    e.preventDefault();
+                    showColorPicker();
+                }
+                // Ctrl+A: 全选当前页
+                else if (e.ctrlKey && e.key === 'a') {
+                    e.preventDefault();
+                    const pageData = pagesData[currentPage];
+                    if (pageData && pageData.characters) {
+                        selectedCharacters.clear();
+                        for (let i = 0; i < pageData.characters.length; i++) {
+                            selectedCharacters.add(i);
+                        }
+                        renderEditorContent();
+                        updateFormatButtons();
+                    }
+                }
+                // Escape: 取消选择
+                else if (e.key === 'Escape') {
+                    selectedCharacters.clear();
+                    renderEditorContent();
+                    updateFormatButtons();
+                }
+            });
+            
+            // 生成指令按钮
+            document.getElementById('generate-btn').addEventListener('click', generateCommand);
+            
+            // 复制指令按钮
+            document.getElementById('copy-btn').addEventListener('click', function() {
+                const command = document.getElementById('output').textContent;
+                if (command && !command.startsWith('//')) {
+                    navigator.clipboard.writeText(command).then(() => {
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '已复制';
+                        this.style.background = '#10b981';
+                        
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                            this.style.background = '';
+                        }, 2000);
+                    }).catch(err => {
+                        alert('复制失败，请手动复制指令文本。');
+                    });
+                }
+            });
+            
+            // 测试指令按钮
+            document.getElementById('test-btn').addEventListener('click', function() {
+                const command = document.getElementById('output').textContent;
+                if (command && !command.startsWith('//')) {
+                    navigator.clipboard.writeText(command).then(() => {
+                        alert('指令已复制到剪贴板！\n\n请切换到Minecraft游戏，在聊天框中粘贴并执行指令。\n\n确保使用的是Minecraft Java版 1.21.5+');
+                    });
+                }
+            });
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', initEditor);
+    </script>
+</body>
+</html>
