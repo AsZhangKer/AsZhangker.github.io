@@ -1,0 +1,2045 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>随机转盘 · 种子版</title>
+
+<!-- Font Awesome 6 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+<style>
+@font-face { font-display:swap; font-family:'PixelFont'; src:url('font.otf') format('opentype'); }
+
+/* ================================================================
+   OreUI 语义化主题变量
+   ================================================================ */
+:root {
+    --neutral-background: #48494A;
+    --neutral-background-hovered: #58585A;
+    --neutral-background-pressed: #313233;
+    --neutral-shadow: #313233;
+    --neutral-text: #FFFFFF;
+    --neutral-text-dimmer: #D0D1D4;
+    --neutral-text-dimmest: #B1B2B5;
+    --neutral-border: #1E1E1F;
+    --neutral-border-focused: #FFFFFF;
+    --neutral-specular-default-top-left: rgba(255,255,255,0.6);
+    --neutral-specular-default-bottom-right: rgba(255,255,255,0.4);
+    --neutral-specular-top-left: rgba(255,255,255,0.2);
+    --neutral-specular-bottom-right: rgba(255,255,255,0.1);
+    --neutral-background-disabled: #D0D1D4;
+    --neutral-shadow-disabled: #B1B2B5;
+    --neutral-text-disabled: #48494A;
+    --neutral-border-disabled: #8C8D90;
+    --neutral-20-text: #1E1E1F;
+    --primary-background: #3C8527;
+    --primary-background-hovered: #2A641C;
+    --primary-background-pressed: #1D4D13;
+    --primary-shadow: #1D4D13;
+    --primary-text: #FFFFFF;
+    --primary-border: #1E1E1F;
+    --secondary-background: #D0D1D4;
+    --secondary-background-hovered: #B1B2B5;
+    --secondary-background-pressed: #B1B2B5;
+    --secondary-shadow: #58585A;
+    --secondary-text: #1E1E1F;
+    --secondary-border: #1E1E1F;
+    --destructive-background: #CA3636;
+    --destructive-background-hovered: #C02D2D;
+    --destructive-background-pressed: #AD1D1D;
+    --destructive-shadow: #AD1D1D;
+    --destructive-text: #FFFFFF;
+    --destructive-border: #1E1E1F;
+    --gray-20: #E6E8EB;
+    --gray-30: #D0D1D4;
+    --gray-40: #B1B2B5;
+    --gray-50: #8D8D90;
+    --gray-60: #58585A;
+    --gray-70: #48494A;
+    --gray-80: #313233;
+    --gray-90: #242425;
+    --gray-100: #1E1E1F;
+    --black: #000000;
+}
+
+/* ================================================================
+   Global Reset
+   ================================================================ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+    min-height: 100vh;
+    background: #000;
+    color: var(--neutral-text);
+    font-family: 'PixelFont', 'NotoSans Bold', sans-serif;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+}
+
+/* Background image layer */
+#bg-layer {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    background: url('bg.jpg') center/cover no-repeat;
+}
+
+/* ================================================================
+   Meteor shower canvas
+   ================================================================ */
+#meteor-canvas {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* ================================================================
+   Title banner
+   ================================================================ */
+.title-bar {
+    position: relative; z-index: 2;
+    display: flex; justify-content: center;
+    padding: 24px 20px 0 20px;
+}
+.title-bar img {
+    display: block;
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    image-rendering: auto;
+}
+
+/* ================================================================
+   Layout — 电脑端左右，手机端上下
+   ================================================================ */
+.layout {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: row;
+    min-height: 100vh;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Left: Config */
+.config {
+    display: flex; flex-direction: column;
+    width: 380px; flex-shrink: 0;
+    padding: 40px 32px;
+    gap: 16px;
+    overflow-y: auto;
+    overflow-x: visible;
+    height: 100vh;
+    position: relative;
+    z-index: 5;
+}
+
+/* Right: Wheel */
+.wheel-side {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 20px;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+}
+
+/* ================================================================
+   Section title
+   ================================================================ */
+.section-title {
+    font-size: 1.4rem;
+    font-weight: bold;
+    letter-spacing: 3px;
+    color: var(--neutral-text-dimmest);
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--neutral-border);
+}
+
+/* ================================================================
+   OreUI 风格输入框 (TextField)
+   ================================================================ */
+.oreui-input {
+    background-color: var(--gray-80);
+    border: 2px solid var(--gray-100);
+    box-shadow: inset 0 4px var(--gray-90);
+    caret-color: #6CC349;
+    color: var(--neutral-text);
+    font-family: 'PixelFont', 'NotoSans Bold', sans-serif;
+    font-size: 1.1rem;
+    outline: none;
+    padding: 0 14px;
+    height: 48px;
+    width: 100%;
+}
+.oreui-input:focus {
+    border-color: var(--neutral-border-focused);
+}
+.oreui-input::placeholder {
+    color: rgba(177,178,181,0.5);
+}
+.oreui-input::selection {
+    background-color: rgba(108, 195, 73, 0.5);
+}
+
+/* Short hex input variant */
+.oreui-input.hex-input {
+    height: 38px;
+    font-size: 0.95rem;
+    font-family: 'PixelFont', monospace;
+    padding: 0 8px;
+    flex: 1; min-width: 0;
+}
+
+/* Option name uses oreui-input */
+.opt-name {
+    flex: 1; min-width: 0;
+}
+
+/* ================================================================
+   Option rows
+   ================================================================ */
+.option-list {
+    display: flex; flex-direction: column; gap: 8px;
+}
+
+.option-row {
+    display: flex; align-items: flex-start; gap: 8px;
+    flex-wrap: wrap;
+    position: relative;
+}
+
+/* ================================================================
+   OreUI 风格行内按钮 (- / +)
+   ================================================================ */
+.btn-row-action {
+    width: 42px; height: 48px;
+    border: 2px solid var(--neutral-border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.1s, box-shadow 0.1s;
+    flex-shrink: 0;
+    font-size: 1rem;
+    font-family: 'PixelFont', 'NotoSans Bold', sans-serif;
+}
+/* 减号按钮 — OreUI destructive 风格 */
+.btn-row-action.btn-minus {
+    background-color: var(--destructive-background);
+    box-shadow: inset 0 -4px var(--destructive-shadow),
+                inset 3px 3px var(--neutral-specular-top-left),
+                inset -3px -3px var(--neutral-specular-bottom-right);
+    color: var(--destructive-text);
+    border-color: var(--destructive-border);
+}
+.btn-row-action.btn-minus:hover:not(:disabled) {
+    background-color: var(--destructive-background-hovered);
+}
+.btn-row-action.btn-minus:active:not(:disabled) {
+    background-color: var(--destructive-background-pressed);
+    box-shadow: inset 3px 3px rgba(255,255,255,0.2),
+                inset -3px -3px rgba(255,255,255,0.1);
+}
+/* 加号按钮 — OreUI secondary 风格 */
+.btn-row-action.btn-expand {
+    background-color: var(--secondary-background);
+    box-shadow: inset 0 -4px var(--secondary-shadow),
+                inset 3px 3px var(--neutral-specular-default-top-left),
+                inset -3px -3px var(--neutral-specular-default-bottom-right);
+    color: var(--secondary-text);
+}
+.btn-row-action.btn-expand:hover:not(:disabled) {
+    background-color: var(--secondary-background-hovered);
+    box-shadow: inset 0 -4px var(--secondary-shadow),
+                inset 3px 3px rgba(255,255,255,0.8),
+                inset -3px -3px rgba(255,255,255,0.6);
+}
+.btn-row-action.btn-expand:active:not(:disabled),
+.btn-row-action.btn-expand.active {
+    background-color: var(--secondary-background-pressed);
+    box-shadow: inset 3px 3px rgba(255,255,255,0.4),
+                inset -3px -3px rgba(255,255,255,0.2);
+}
+.btn-row-action:disabled {
+    opacity: 0.35; cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* ================================================================
+   Expanded sub-row
+   ================================================================ */
+.option-expand {
+    display: none;
+    width: 100%;
+    padding: 10px 12px;
+    margin: 2px 0 0 0;
+    background: rgba(31,31,31,0.95);
+    border: 2px solid var(--gray-60);
+    box-shadow:
+        inset 2px 2px rgba(255,255,255,0.1),
+        inset -2px -2px rgba(0,0,0,0.3),
+        2px 4px 8px rgba(0,0,0,0.5);
+    position: relative;
+    z-index: 10;
+}
+.option-expand.show { display: block; }
+
+.expand-row-inner {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 8px;
+}
+
+.expand-label {
+    font-size: 0.9rem;
+    color: var(--neutral-text-dimmest);
+    margin-right: 4px;
+    white-space: nowrap;
+}
+
+/* Color swatch (oreui style) */
+.color-swatch-btn {
+    width: 42px; height: 38px;
+    border: 2px solid var(--neutral-border);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    color: #fff;
+    font-size: 1rem;
+    transition: border-color 0.1s;
+}
+.color-swatch-btn:hover { border-color: var(--neutral-border-focused); }
+
+/* Preset swatches */
+.preset-colors {
+    display: flex; flex-wrap: wrap; gap: 6px;
+}
+.preset-color {
+    width: 28px; height: 28px;
+    border: 2px solid rgba(0,0,0,0.5);
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.1s;
+}
+.preset-color:hover { transform: scale(1.2); }
+.preset-color.selected {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px var(--primary-background);
+}
+
+/* ================================================================
+   Add option button — OreUI 风格
+   ================================================================ */
+.btn-add-opt {
+    width: 100%; height: 44px;
+    background-color: var(--gray-80);
+    border: 2px solid var(--gray-60);
+    box-shadow: inset 2px 2px rgba(255,255,255,0.1),
+                inset -2px -2px rgba(0,0,0,0.2);
+    color: var(--neutral-text-dimmer);
+    font-size: 1rem;
+    font-family: 'PixelFont', 'NotoSans Bold', sans-serif;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background 0.1s, color 0.1s, border-color 0.1s;
+    letter-spacing: 1px;
+}
+.btn-add-opt:hover {
+    background-color: var(--gray-70);
+    border-color: var(--gray-50);
+    color: var(--neutral-text);
+}
+.btn-add-opt:active {
+    background-color: var(--gray-90);
+    box-shadow: inset 3px 3px rgba(0,0,0,0.3),
+                inset -2px -2px rgba(255,255,255,0.05);
+}
+
+/* ================================================================
+   Collapsible sections (使用说明 / 种子输入)
+   ================================================================ */
+.collapsible {
+    cursor: pointer; user-select: none;
+}
+.collapsible .collapsible-header {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--neutral-text-dimmest);
+    font-size: 1rem;
+    padding: 4px 0;
+}
+.collapsible .collapsible-arrow {
+    display: inline-block;
+    transition: transform 0.2s;
+    font-size: 0.8rem;
+    color: var(--neutral-text-dimmest);
+}
+.collapsible.open .collapsible-arrow { transform: rotate(90deg); }
+.collapsible-body {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+.collapsible.open .collapsible-body { max-height: 500px; }
+.collapsible-body-inner {
+    color: var(--neutral-text-dimmest);
+    font-size: 0.85rem;
+    line-height: 1.8;
+    padding: 8px 0;
+}
+.collapsible-body-inner b { color: var(--neutral-text-dimmer); }
+.collapsible-body-inner code {
+    background: rgba(48,48,49,0.8);
+    padding: 2px 6px;
+    font-family: 'PixelFont', monospace;
+    color: var(--neutral-text);
+}
+
+/* Seed checkbox */
+.seed-checkbox {
+    width: 24px; height: 24px;
+    cursor: pointer;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    flex-shrink: 0;
+}
+
+/* Seed input inside collapsible body */
+.seed-input-wrap {
+    padding: 8px 0;
+}
+.seed-input-wrap .oreui-input {
+    height: 40px;
+    font-size: 0.9rem;
+    font-family: 'PixelFont', monospace;
+}
+.seed-input-wrap .oreui-input:disabled {
+    background-color: var(--gray-90);
+    color: var(--gray-50);
+    cursor: not-allowed;
+}
+.seed-hint {
+    font-size: 0.75rem;
+    color: var(--neutral-text-dimmest);
+    margin-top: 4px;
+}
+
+/* ================================================================
+   Action buttons — OreUI
+   ================================================================ */
+.action-buttons {
+    display: flex; flex-direction: column; gap: 10px;
+}
+.action-buttons .oreui_btn_inner {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    height: 52px;
+    margin: 0;
+    border: none; outline: none;
+    font-family: 'PixelFont', 'NotoSans Bold', sans-serif;
+    cursor: pointer; transition: all 0.1s ease;
+    border-radius: 0 !important;
+    letter-spacing: 2px;
+    font-size: 1.1rem;
+}
+
+.oreui_btn_inner.status_normal {
+    height: 52px;
+    border: 2px solid var(--neutral-border);
+    background-color: var(--secondary-background);
+    box-shadow: inset 0 -4px var(--secondary-shadow),
+                inset 3px 3px var(--neutral-specular-default-top-left),
+                inset -3px -7px var(--neutral-specular-default-bottom-right);
+    color: var(--neutral-20-text);
+}
+.oreui_btn_inner.status_normal:hover:not(:disabled) {
+    background-color: var(--secondary-background-hovered);
+    box-shadow: inset 0 -4px var(--secondary-shadow),
+                inset 3px 3px rgba(255,255,255,0.8),
+                inset -3px -7px rgba(255,255,255,0.6);
+}
+.oreui_btn_inner.status_normal:active:not(:disabled) {
+    background-color: var(--secondary-background-pressed);
+    box-shadow: inset 3px 3px rgba(255,255,255,0.8),
+                inset -3px -3px rgba(255,255,255,0.6);
+}
+
+.oreui_btn_inner.status_green {
+    height: 52px;
+    border: 2px solid var(--primary-border);
+    background-color: var(--primary-background);
+    box-shadow: inset 0 -4px var(--primary-shadow),
+                inset 3px 3px var(--neutral-specular-top-left),
+                inset -3px -7px var(--neutral-specular-bottom-right);
+    color: var(--primary-text);
+}
+.oreui_btn_inner.status_green:hover:not(:disabled) {
+    background-color: var(--primary-background-hovered);
+    box-shadow: inset 0 -4px var(--primary-shadow),
+                inset 3px 3px rgba(255,255,255,0.4),
+                inset -3px -7px rgba(255,255,255,0.3);
+}
+.oreui_btn_inner.status_green:active:not(:disabled) {
+    background-color: var(--primary-background-pressed);
+    box-shadow: inset 3px 3px rgba(255,255,255,0.4),
+                inset -3px -3px rgba(255,255,255,0.3);
+}
+
+.oreui_btn_inner.status_red {
+    height: 52px;
+    border: 2px solid var(--destructive-border);
+    background-color: var(--destructive-background);
+    box-shadow: inset 0 -4px var(--destructive-shadow),
+                inset 3px 3px var(--neutral-specular-top-left),
+                inset -3px -7px var(--neutral-specular-bottom-right);
+    color: var(--destructive-text);
+}
+.oreui_btn_inner.status_red:hover:not(:disabled) {
+    background-color: var(--destructive-background-hovered);
+}
+.oreui_btn_inner.status_red:active:not(:disabled) {
+    background-color: var(--destructive-background-pressed);
+}
+
+.oreui_btn_inner:disabled,
+.oreui_btn_inner.status_disabled {
+    background-color: var(--neutral-background-disabled);
+    box-shadow: inset 0 -4px var(--neutral-shadow-disabled);
+    color: var(--neutral-text-disabled);
+    cursor: not-allowed;
+}
+
+/* Seed info */
+.seed-info {
+    color: var(--neutral-text-dimmest);
+    font-size: 0.7rem;
+    text-align: center;
+    word-break: break-all;
+    padding-top: 4px;
+    font-family: monospace;
+    min-height: 18px;
+}
+
+/* ================================================================
+   Wheel
+   ================================================================ */
+.wheel-outer {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.wheel-fan {
+    position: absolute;
+    width: 115%; height: 115%;
+    z-index: 0;
+    pointer-events: none;
+    image-rendering: auto;
+    opacity: 0.6;
+}
+.wheel-container {
+    position: relative;
+    width: min(55vw, 500px); height: min(55vw, 500px);
+    cursor: pointer;
+    flex-shrink: 0;
+    z-index: 1;
+}
+.wheel-container canvas { display: block; width: 100%; height: 100%; }
+
+/* ================================================================
+   Pointer — arrow.png
+   ================================================================ */
+.pointer {
+    position: absolute;
+    top: -36px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+}
+.pointer img {
+    display: block;
+    width: 104px;
+    height: auto;
+    image-rendering: auto;
+}
+
+/* ================================================================
+   Result below wheel
+   ================================================================ */
+.result-area {
+    margin-top: 32px;
+    min-height: 80px;
+    display: flex; flex-direction: column; align-items: center;
+    opacity: 0; transform: translateY(12px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.result-area.show { opacity: 1; transform: translateY(0); }
+
+.result-box {
+    background: rgba(72,73,74,0.9);
+    border: 3px solid var(--neutral-border-focused);
+    box-shadow:
+        inset 0 -4px var(--neutral-shadow),
+        inset 3px 3px var(--neutral-specular-default-top-left),
+        inset -3px -7px var(--neutral-specular-default-bottom-right),
+        3px 3px 0 0 rgba(0,0,0,0.5);
+    padding: 18px 48px;
+    text-align: center;
+    min-width: 160px;
+}
+.result-label {
+    font-size: 1rem;
+    color: var(--neutral-text-dimmest);
+    letter-spacing: 4px;
+    margin-bottom: 6px;
+}
+.result-value {
+    font-family: 'PixelFont', monospace;
+    font-size: 2.4rem;
+    font-weight: bold;
+    color: var(--primary-background);
+    letter-spacing: 3px;
+    max-width: 420px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.result-hint {
+    font-size: 0.9rem;
+    color: var(--neutral-text-dimmest);
+    margin-top: 6px;
+}
+
+/* ================================================================
+   Color Picker Popup — OreUI modal style
+   ================================================================ */
+.color-picker-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+    align-items: center; justify-content: center;
+}
+.color-picker-overlay.show { display: flex; }
+
+.color-picker-panel {
+    background: var(--gray-80);
+    border: 2px solid var(--gray-100);
+    box-shadow:
+        inset 2px 2px rgba(255,255,255,0.1),
+        inset -2px -2px rgba(0,0,0,0.3),
+        4px 8px 20px rgba(0,0,0,0.7);
+    padding: 20px;
+    width: 320px;
+    max-width: 95vw;
+    position: relative;
+}
+
+.picker-header {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--gray-70);
+    padding: 8px 12px;
+    margin: -20px -20px 16px -20px;
+}
+.picker-title {
+    font-size: 1rem;
+    color: var(--neutral-text);
+    letter-spacing: 2px;
+}
+.picker-close {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid var(--gray-100);
+    color: var(--neutral-text);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem;
+    transition: background 0.1s;
+}
+.picker-close:hover { background: var(--destructive-background); }
+
+.hue-bar-wrap {
+    position: relative;
+    height: 24px;
+    margin-bottom: 12px;
+    cursor: pointer;
+}
+.hue-bar {
+    width: 100%; height: 100%;
+    border: 2px solid var(--gray-100);
+    background: linear-gradient(to right,
+        #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000
+    );
+}
+.hue-thumb {
+    position: absolute;
+    top: -4px;
+    width: 12px; height: 32px;
+    border: 2px solid #fff;
+    background: transparent;
+    transform: translateX(-50%);
+    pointer-events: none;
+    box-shadow: 0 0 4px rgba(0,0,0,0.5);
+}
+
+.sl-grid-wrap {
+    position: relative;
+    width: 100%;
+    height: 150px;
+    margin-bottom: 12px;
+    cursor: crosshair;
+    border: 2px solid var(--gray-100);
+}
+.sl-grid {
+    width: 100%; height: 100%;
+}
+.sl-cursor {
+    position: absolute;
+    width: 14px; height: 14px;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    box-shadow: 0 0 4px rgba(0,0,0,0.7), inset 0 0 2px rgba(0,0,0,0.4);
+}
+
+.picker-preview-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 12px;
+}
+.picker-preview-swatch {
+    width: 48px; height: 40px;
+    border: 2px solid var(--gray-100);
+    flex-shrink: 0;
+}
+.picker-hex-input {
+    flex: 1;
+    height: 40px;
+    background: var(--gray-80);
+    color: var(--neutral-text);
+    border: 2px solid var(--gray-100);
+    padding: 0 10px;
+    font-size: 1rem;
+    font-family: 'PixelFont', monospace;
+    outline: none;
+    text-transform: uppercase;
+}
+.picker-hex-input:focus { border-color: var(--neutral-border-focused); }
+
+.picker-preset-label {
+    font-size: 0.8rem;
+    color: var(--neutral-text-dimmest);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+}
+.picker-presets {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 14px;
+}
+.picker-preset-swatch {
+    width: 30px; height: 30px;
+    border: 2px solid rgba(0,0,0,0.5);
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.1s;
+}
+.picker-preset-swatch:hover { transform: scale(1.15); border-color: #fff; }
+.picker-preset-swatch.selected {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px var(--primary-background);
+}
+
+.picker-confirm {
+    width: 100%;
+    height: 44px;
+    border: 2px solid var(--primary-border);
+    background-color: var(--primary-background);
+    box-shadow: inset 0 -4px var(--primary-shadow),
+                inset 3px 3px var(--neutral-specular-top-left),
+                inset -3px -7px var(--neutral-specular-bottom-right);
+    color: var(--primary-text);
+    font-family: 'PixelFont', 'NotoSans Bold', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+.picker-confirm:hover { background-color: var(--primary-background-hovered); }
+.picker-confirm:active {
+    background-color: var(--primary-background-pressed);
+    box-shadow: inset 3px 3px rgba(255,255,255,0.4),
+                inset -3px -3px rgba(255,255,255,0.3);
+}
+
+/* ================================================================
+   Responsive — 手机端优化
+   ================================================================ */
+@media (max-width: 860px) {
+    .title-bar {
+        padding: 16px 16px 0 16px;
+    }
+    .title-bar img {
+        max-width: 360px;
+    }
+    .layout {
+        flex-direction: column;
+        min-height: auto;
+        height: 100vh;
+        overflow: hidden;
+    }
+    .config {
+        width: 100%; max-width: 100%;
+        height: auto; max-height: 42vh;
+        padding: 20px 16px;
+        flex-shrink: 0;
+        overflow-y: auto;
+        overflow-x: visible;
+        gap: 10px;
+    }
+    .wheel-side {
+        flex: 1;
+        min-height: 0;
+        padding: 16px 16px 40px;
+        justify-content: flex-start;
+        overflow-y: auto;
+    }
+    .wheel-container {
+        width: min(70vw, 340px) !important;
+        height: min(70vw, 340px) !important;
+    }
+    .pointer {
+        top: -56px;
+    }
+    .pointer img {
+        width: 84px;
+    }
+    .wheel-fan {
+        width: 118%; height: 118%;
+    }
+    .result-box {
+        padding: 14px 28px;
+    }
+    .result-value {
+        font-size: 1.8rem;
+    }
+    .result-area {
+        margin-top: 20px;
+        min-height: 60px;
+    }
+    .action-buttons .oreui_btn_inner {
+        height: 44px;
+        font-size: 1rem;
+        letter-spacing: 1px;
+    }
+    .option-expand {
+        padding: 8px 10px;
+    }
+    .color-picker-panel {
+        width: 300px;
+        padding: 14px;
+    }
+    .picker-header {
+        margin: -14px -14px 12px -14px;
+    }
+    .sl-grid-wrap {
+        height: 120px;
+    }
+    .section-title {
+        font-size: 1.2rem;
+    }
+    .btn-row-action {
+        width: 38px; height: 44px;
+    }
+    .oreui-input, .opt-name {
+        height: 44px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 400px) {
+    .title-bar {
+        padding: 12px 10px 0 10px;
+    }
+    .title-bar img {
+        max-width: 280px;
+    }
+    .config {
+        max-height: 38vh;
+        padding: 14px 10px;
+        gap: 8px;
+    }
+    .wheel-container {
+        width: min(82vw, 280px) !important;
+        height: min(82vw, 280px) !important;
+    }
+    .pointer {
+        top: -44px;
+    }
+    .pointer img {
+        width: 68px;
+    }
+    .wheel-fan {
+        width: 120%; height: 120%;
+    }
+    .wheel-side {
+        padding: 12px 10px 30px;
+    }
+    .result-box {
+        padding: 12px 20px;
+    }
+    .result-value {
+        font-size: 1.5rem;
+    }
+    .btn-row-action {
+        width: 36px; height: 40px;
+        font-size: 0.9rem;
+    }
+    .oreui-input, .opt-name {
+        height: 40px;
+        font-size: 0.95rem;
+    }
+    .color-picker-panel {
+        width: 280px;
+        padding: 12px;
+    }
+    .picker-header {
+        margin: -12px -12px 10px -12px;
+    }
+    .sl-grid-wrap {
+        height: 100px;
+    }
+    .picker-presets {
+        gap: 4px;
+    }
+    .picker-preset-swatch {
+        width: 26px; height: 26px;
+    }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #48494a; border: 1px solid #000; }
+::-webkit-scrollbar-thumb:hover { background: #58585a; }
+
+.config { scrollbar-width: thin; scrollbar-color: #48494a #000; }
+</style>
+</head>
+<body>
+
+<!-- Background image -->
+<div id="bg-layer"></div>
+
+<!-- Meteor shower -->
+<canvas id="meteor-canvas"></canvas>
+
+<!-- Color Picker Overlay -->
+<div class="color-picker-overlay" id="colorPickerOverlay">
+    <div class="color-picker-panel" id="colorPickerPanel">
+        <div class="picker-header">
+            <span class="picker-title"><i class="fa-solid fa-palette"></i> 取色盘</span>
+            <button class="picker-close" id="pickerClose" title="关闭">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="sl-grid-wrap" id="slGridWrap">
+            <canvas class="sl-grid" id="slGrid"></canvas>
+            <div class="sl-cursor" id="slCursor"></div>
+        </div>
+
+        <div class="hue-bar-wrap" id="hueBarWrap">
+            <div class="hue-bar" id="hueBar"></div>
+            <div class="hue-thumb" id="hueThumb"></div>
+        </div>
+
+        <div class="picker-preview-row">
+            <div class="picker-preview-swatch" id="pickerPreviewSwatch"></div>
+            <input class="picker-hex-input" id="pickerHexInput" type="text" maxlength="7"
+                   placeholder="#XXXXXX" spellcheck="false">
+        </div>
+
+        <div class="picker-preset-label">预设颜色</div>
+        <div class="picker-presets" id="pickerPresets"></div>
+
+        <button class="picker-confirm" id="pickerConfirm">
+            <i class="fa-solid fa-check"></i> 确定
+        </button>
+    </div>
+</div>
+
+<!-- Title -->
+<div class="title-bar">
+    <img src="title.png" alt="随机转盘">
+</div>
+
+<!-- Layout -->
+<div class="layout">
+
+<!-- ============ LEFT: Config ============ -->
+<div class="config">
+    <div class="section-title"><i class="fa-solid fa-list-check"></i> 选项设置</div>
+
+    <div class="option-list" id="optionList"></div>
+
+    <button class="btn-add-opt" id="btnAddOpt">
+        <i class="fa-solid fa-plus"></i> 新增选项
+    </button>
+
+    <!-- 种子输入（折叠） -->
+    <div class="collapsible" id="collapsibleSeed">
+        <div class="collapsible-header">
+            <span class="collapsible-arrow"><i class="fa-solid fa-angle-right"></i></span>
+            <img class="seed-checkbox" id="seedCheckbox" src="empty_.png" alt="toggle" title="启用自定义种子">
+            <span>自定义种子（可选）</span>
+        </div>
+        <div class="collapsible-body">
+            <div class="seed-input-wrap">
+                <input class="oreui-input" id="customSeedInput" type="text"
+                       placeholder="输入任意文本作为种子" maxlength="200" spellcheck="false" disabled>
+                <div class="seed-hint">
+                    勾选复选框启用，输入文本作为固定种子。留空则使用当前小时。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 使用说明（折叠） -->
+    <div class="collapsible" id="collapsibleHelp">
+        <div class="collapsible-header">
+            <span class="collapsible-arrow"><i class="fa-solid fa-angle-right"></i></span>
+            <span><i class="fa-solid fa-circle-question"></i> 使用说明</span>
+        </div>
+        <div class="collapsible-body">
+            <div class="collapsible-body-inner">
+                填写选项名称（最多8个字符）。<br>
+                点击行右侧 <b>[+]</b> 展开，设置颜色（点击色块或输入 <code>#XXXXXX</code>）。<br>
+                点击 <b>[-]</b> 移除选项。<br>
+                点击 <b>转盘</b> 或 <b>[<i class="fa-solid fa-play"></i> 应用列表]</b> 即可抽签。<br>
+                在「自定义种子」中输入文本可固定随机结果。<br>
+                种子 + 选项内容 + 小时 → 确定性随机结果。
+            </div>
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="action-buttons">
+        <button class="oreui_btn_inner status_normal" id="btnApply" title="应用列表">
+            <i class="fa-solid fa-play"></i> 应用列表
+        </button>
+        <button class="oreui_btn_inner status_red" id="btnReset" title="恢复默认">
+            <i class="fa-solid fa-rotate-left"></i> 恢复默认
+        </button>
+        <button class="oreui_btn_inner status_green" id="btnStart" title="开始抽签">
+            <i class="fa-solid fa-dharmachakra"></i> 开始
+        </button>
+    </div>
+
+    <div class="seed-info" id="seedInfo"></div>
+</div>
+
+<!-- ============ RIGHT: Wheel ============ -->
+<div class="wheel-side">
+    <div class="wheel-outer">
+        <img class="wheel-fan" src="fan.png" alt="">
+        <div class="wheel-container" id="wheelContainer">
+            <canvas id="wheel"></canvas>
+            <div class="pointer">
+                <img src="arrow.png" alt="pointer">
+            </div>
+        </div>
+    </div>
+    <div class="result-area" id="resultArea">
+        <div class="result-box">
+            <div class="result-label"><i class="fa-solid fa-trophy"></i> 结果</div>
+            <div class="result-value" id="resultText"></div>
+            <div class="result-hint" id="resultHint"></div>
+        </div>
+    </div>
+</div>
+
+</div><!-- /layout -->
+
+<script>
+(function() {
+    /* ================================================================
+       DOM
+       ================================================================ */
+    var canvas      = document.getElementById('wheel');
+    var ctx         = canvas.getContext('2d');
+    var wheelContainer = document.getElementById('wheelContainer');
+    var optionList  = document.getElementById('optionList');
+    var btnAddOpt   = document.getElementById('btnAddOpt');
+    var btnApply    = document.getElementById('btnApply');
+    var btnReset    = document.getElementById('btnReset');
+    var btnStart    = document.getElementById('btnStart');
+    var seedInfo    = document.getElementById('seedInfo');
+    var resultArea  = document.getElementById('resultArea');
+    var resultText  = document.getElementById('resultText');
+    var resultHint  = document.getElementById('resultHint');
+    var customSeedInput = document.getElementById('customSeedInput');
+    var seedCheckbox   = document.getElementById('seedCheckbox');
+    var seedEnabled    = false;
+    var collapsibleHelp = document.getElementById('collapsibleHelp');
+    var collapsibleSeed = document.getElementById('collapsibleSeed');
+
+    /* ================================================================
+       Color Picker DOM & State
+       ================================================================ */
+    var pickerOverlay    = document.getElementById('colorPickerOverlay');
+    var slGrid           = document.getElementById('slGrid');
+    var slGridWrap       = document.getElementById('slGridWrap');
+    var slCursor         = document.getElementById('slCursor');
+    var hueBarWrap       = document.getElementById('hueBarWrap');
+    var hueThumb         = document.getElementById('hueThumb');
+    var pickerPreview    = document.getElementById('pickerPreviewSwatch');
+    var pickerHexInput   = document.getElementById('pickerHexInput');
+    var pickerPresets    = document.getElementById('pickerPresets');
+    var pickerConfirm    = document.getElementById('pickerConfirm');
+    var pickerClose      = document.getElementById('pickerClose');
+
+    var pickerHue = 0;
+    var pickerSat = 100;
+    var pickerLit = 50;
+    var pickerTarget = null;
+    var pickerDragging = null;
+    var pickerCurrentHex = '#42CCCC';
+
+    /* ================================================================
+       Constants
+       ================================================================ */
+    var PRESET_COLORS = [
+        '#42CCCC','#9471E0','#FFB366','#89DEF9','#A0E081',
+        '#F064B8','#FFE866','#3C8527','#CA3636','#2E6BE5',
+        '#FF9800','#8BC34A','#607D8B','#E91E63','#00BCD4'
+    ];
+
+    var R = 220;
+    var dpr = 1;
+    var SECTORS = [];
+    var currentAngle = 0;
+    var isAnimating = false;
+    var currentSeed = 0;
+    var rowCounter = 0;
+    var DEFAULT_OPTIONS = ['解密', '单方块', '随机空岛'];
+
+    /* ================================================================
+       Collapsible — 使用说明
+       ================================================================ */
+    collapsibleHelp.addEventListener('click', function() {
+        collapsibleHelp.classList.toggle('open');
+    });
+
+    /* ================================================================
+       Collapsible — 种子输入
+       ================================================================ */
+    collapsibleSeed.addEventListener('click', function(e) {
+        /* Don't toggle when clicking the input or checkbox */
+        if (e.target === customSeedInput || e.target === seedCheckbox) return;
+        collapsibleSeed.classList.toggle('open');
+    });
+    customSeedInput.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+
+    /* Seed checkbox toggle */
+    seedCheckbox.addEventListener('click', function(e) {
+        e.stopPropagation();
+        seedEnabled = !seedEnabled;
+        if (seedEnabled) {
+            seedCheckbox.src = 'empty_on.png';
+            customSeedInput.disabled = false;
+            customSeedInput.focus();
+        } else {
+            seedCheckbox.src = 'empty_.png';
+            customSeedInput.disabled = true;
+            customSeedInput.value = '';
+        }
+        applyList();
+    });
+
+    /* ================================================================
+       Color Picker — internal helpers
+       ================================================================ */
+    function setHueThumb() {
+        hueThumb.style.left = (pickerHue / 360 * 100) + '%';
+    }
+
+    function updateSLGrid() {
+        var w = slGrid.width;
+        var h = slGrid.height;
+        var gctx = slGrid.getContext('2d');
+        var hueColor = hslToHex(pickerHue, 100, 50);
+
+        var gradH = gctx.createLinearGradient(0, 0, w, 0);
+        gradH.addColorStop(0, '#ffffff');
+        gradH.addColorStop(1, hueColor);
+        gctx.fillStyle = gradH;
+        gctx.fillRect(0, 0, w, h);
+
+        var gradV = gctx.createLinearGradient(0, 0, 0, h);
+        gradV.addColorStop(0, 'rgba(0,0,0,0)');
+        gradV.addColorStop(1, 'rgba(0,0,0,1)');
+        gctx.fillStyle = gradV;
+        gctx.fillRect(0, 0, w, h);
+    }
+
+    function setSLCursor() {
+        slCursor.style.left = (pickerSat / 100 * 100) + '%';
+        slCursor.style.top = ((1 - pickerLit / 100) * 100) + '%';
+    }
+
+    function hslToHex(h, s, l) {
+        s /= 100;
+        l /= 100;
+        var c = (1 - Math.abs(2 * l - 1)) * s;
+        var x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+        var m = l - c / 2;
+        var r = 0, g = 0, b = 0;
+        if (h < 60) { r = c; g = x; b = 0; }
+        else if (h < 120) { r = x; g = c; b = 0; }
+        else if (h < 180) { r = 0; g = c; b = x; }
+        else if (h < 240) { r = 0; g = x; b = c; }
+        else if (h < 300) { r = x; g = 0; b = c; }
+        else { r = c; g = 0; b = x; }
+        r = Math.round((r + m) * 255);
+        g = Math.round((g + m) * 255);
+        b = Math.round((b + m) * 255);
+        return '#' + [r, g, b].map(function(v) {
+            var hex = v.toString(16);
+            return hex.length === 1 ? '0' + hex : hex;
+        }).join('').toUpperCase();
+    }
+
+    function hexToHsl(hex) {
+        var r = parseInt(hex.slice(1,3), 16) / 255;
+        var g = parseInt(hex.slice(3,5), 16) / 255;
+        var b = parseInt(hex.slice(5,7), 16) / 255;
+        var max = Math.max(r, g, b), min = Math.min(r, g, b);
+        var h = 0, s = 0, l = (max + min) / 2;
+        if (max !== min) {
+            var d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                case g: h = ((b - r) / d + 2) / 6; break;
+                case b: h = ((r - g) / d + 4) / 6; break;
+            }
+        }
+        return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+    }
+
+    function updatePickerPreview() {
+        pickerPreview.style.backgroundColor = pickerCurrentHex;
+        pickerHexInput.value = pickerCurrentHex;
+        var presetEls = pickerPresets.querySelectorAll('.picker-preset-swatch');
+        presetEls.forEach(function(el) {
+            var c = el.getAttribute('data-color').toUpperCase();
+            el.classList.toggle('selected', c === pickerCurrentHex.toUpperCase());
+        });
+    }
+
+    function updatePickerFromSL(posX, posY) {
+        var rect = slGridWrap.getBoundingClientRect();
+        var x = Math.max(0, Math.min(1, (posX - rect.left) / rect.width));
+        var y = Math.max(0, Math.min(1, (posY - rect.top) / rect.height));
+        pickerSat = Math.round(x * 100);
+        pickerLit = Math.round((1 - y) * 100);
+        pickerCurrentHex = hslToHex(pickerHue, pickerSat, pickerLit);
+        setSLCursor();
+        updatePickerPreview();
+    }
+
+    function updatePickerFromHue(posX) {
+        var rect = hueBarWrap.getBoundingClientRect();
+        var x = Math.max(0, Math.min(1, (posX - rect.left) / rect.width));
+        pickerHue = Math.round(x * 360);
+        pickerCurrentHex = hslToHex(pickerHue, pickerSat, pickerLit);
+        setHueThumb();
+        updateSLGrid();
+        updatePickerPreview();
+    }
+
+    function openColorPicker(currentHex, targetCallback) {
+        pickerTarget = targetCallback;
+        pickerCurrentHex = currentHex || '#42CCCC';
+        var hsl = hexToHsl(pickerCurrentHex);
+        pickerHue = hsl.h;
+        pickerSat = hsl.s;
+        pickerLit = hsl.l;
+        setHueThumb();
+        setSLCursor();
+        updateSLGrid();
+        updatePickerPreview();
+        pickerOverlay.classList.add('show');
+    }
+
+    function closeColorPicker() {
+        pickerOverlay.classList.remove('show');
+        pickerTarget = null;
+    }
+
+    /* Color picker events */
+    pickerClose.addEventListener('click', closeColorPicker);
+    pickerOverlay.addEventListener('click', function(e) {
+        if (e.target === pickerOverlay) closeColorPicker();
+    });
+
+    hueBarWrap.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        pickerDragging = 'hue';
+        updatePickerFromHue(e.clientX);
+    });
+    hueBarWrap.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        pickerDragging = 'hue';
+        updatePickerFromHue(e.touches[0].clientX);
+    }, {passive: false});
+
+    slGridWrap.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        pickerDragging = 'sl';
+        updatePickerFromSL(e.clientX, e.clientY);
+    });
+    slGridWrap.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        pickerDragging = 'sl';
+        updatePickerFromSL(e.touches[0].clientX, e.touches[0].clientY);
+    }, {passive: false});
+
+    document.addEventListener('mousemove', function(e) {
+        if (pickerDragging === 'hue') updatePickerFromHue(e.clientX);
+        if (pickerDragging === 'sl') updatePickerFromSL(e.clientX, e.clientY);
+    });
+    document.addEventListener('touchmove', function(e) {
+        if (pickerDragging === 'hue') updatePickerFromHue(e.touches[0].clientX);
+        if (pickerDragging === 'sl') updatePickerFromSL(e.touches[0].clientX, e.touches[0].clientY);
+    }, {passive: false});
+    document.addEventListener('mouseup', function() { pickerDragging = null; });
+    document.addEventListener('touchend', function() { pickerDragging = null; });
+
+    pickerHexInput.addEventListener('input', function() {
+        var v = pickerHexInput.value.trim();
+        if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
+            pickerCurrentHex = v.toUpperCase();
+            var hsl = hexToHsl(pickerCurrentHex);
+            pickerHue = hsl.h;
+            pickerSat = hsl.s;
+            pickerLit = hsl.l;
+            setHueThumb();
+            setSLCursor();
+            updateSLGrid();
+            updatePickerPreview();
+        }
+    });
+
+    pickerConfirm.addEventListener('click', function() {
+        if (pickerTarget && pickerCurrentHex) {
+            pickerTarget(pickerCurrentHex);
+        }
+        closeColorPicker();
+    });
+
+    function initPickerSizes() {
+        var rect = slGridWrap.getBoundingClientRect();
+        var d = Math.min(window.devicePixelRatio || 1, 2);
+        slGrid.width = rect.width * d;
+        slGrid.height = rect.height * d;
+        updateSLGrid();
+    }
+    window.addEventListener('resize', function() {
+        if (pickerOverlay.classList.contains('show')) initPickerSizes();
+    });
+
+    /* Build preset swatches in picker */
+    PRESET_COLORS.forEach(function(c) {
+        var s = document.createElement('div');
+        s.className = 'picker-preset-swatch';
+        s.style.backgroundColor = c;
+        s.setAttribute('data-color', c);
+        s.title = c;
+        s.addEventListener('click', function() {
+            pickerCurrentHex = c.toUpperCase();
+            var hsl = hexToHsl(pickerCurrentHex);
+            pickerHue = hsl.h;
+            pickerSat = hsl.s;
+            pickerLit = hsl.l;
+            setHueThumb();
+            setSLCursor();
+            updateSLGrid();
+            updatePickerPreview();
+        });
+        pickerPresets.appendChild(s);
+    });
+
+    /* ================================================================
+       Create option row
+       ================================================================ */
+    function createOptionRow(name, color) {
+        rowCounter++;
+        var id = rowCounter;
+
+        var wrapper = document.createElement('div');
+        wrapper.className = 'option-row';
+
+        /* Main line */
+        var mainLine = document.createElement('div');
+        mainLine.style.cssText = 'display:flex;align-items:center;gap:8px;width:100%;';
+
+        var nameInput = document.createElement('input');
+        nameInput.className = 'oreui-input opt-name';
+        nameInput.type = 'text';
+        nameInput.maxLength = 8;
+        nameInput.placeholder = '选项 ' + id;
+        nameInput.value = name || '';
+        nameInput.spellcheck = false;
+
+        var btnMinus = document.createElement('button');
+        btnMinus.className = 'btn-row-action btn-minus';
+        btnMinus.innerHTML = '<i class="fa-solid fa-minus"></i>';
+        btnMinus.title = '移除';
+        btnMinus.type = 'button';
+
+        var btnExpand = document.createElement('button');
+        btnExpand.className = 'btn-row-action btn-expand';
+        btnExpand.innerHTML = '<i class="fa-solid fa-plus"></i>';
+        btnExpand.title = '扩展选项';
+        btnExpand.type = 'button';
+
+        mainLine.appendChild(nameInput);
+        mainLine.appendChild(btnMinus);
+        mainLine.appendChild(btnExpand);
+        wrapper.appendChild(mainLine);
+
+        /* Expanded panel */
+        var expandDiv = document.createElement('div');
+        expandDiv.className = 'option-expand';
+
+        var inner = document.createElement('div');
+        inner.className = 'expand-row-inner';
+
+        var expandLabel = document.createElement('span');
+        expandLabel.className = 'expand-label';
+        expandLabel.textContent = '颜色';
+
+        var savedColor = color || pickUnusedColor(id - 1);
+        if (!/^#[0-9A-Fa-f]{6}$/.test(savedColor)) {
+            savedColor = '#42CCCC';
+        }
+
+        var colorBtn = document.createElement('button');
+        colorBtn.className = 'color-swatch-btn';
+        colorBtn.title = '点击打开取色盘';
+        colorBtn.innerHTML = '<i class="fa-solid fa-eye-dropper"></i>';
+        colorBtn.style.background = savedColor;
+        colorBtn.type = 'button';
+
+        var hexInput = document.createElement('input');
+        hexInput.className = 'oreui-input hex-input';
+        hexInput.type = 'text';
+        hexInput.maxLength = 7;
+        hexInput.placeholder = '#XXXXXX';
+        hexInput.value = savedColor;
+        hexInput.spellcheck = false;
+
+        colorBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var current = hexInput.value.trim();
+            if (!/^#[0-9A-Fa-f]{6}$/.test(current)) {
+                current = savedColor;
+            }
+            openColorPicker(current, function(newHex) {
+                hexInput.value = newHex;
+                colorBtn.style.background = newHex;
+                var presetsDiv = expandDiv.querySelector('.preset-colors');
+                if (presetsDiv) {
+                    presetsDiv.querySelectorAll('.preset-color').forEach(function(s) {
+                        s.classList.toggle('selected',
+                            s.style.backgroundColor.replace(/\s/g,'').toUpperCase() === newHex.toUpperCase());
+                    });
+                }
+            });
+        });
+
+        hexInput.addEventListener('input', function() {
+            var v = hexInput.value.trim();
+            if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
+                colorBtn.style.background = v;
+            }
+        });
+
+        inner.appendChild(expandLabel);
+        inner.appendChild(colorBtn);
+        inner.appendChild(hexInput);
+        expandDiv.appendChild(inner);
+
+        /* Preset swatches */
+        var presetsDiv = document.createElement('div');
+        presetsDiv.className = 'preset-colors';
+        PRESET_COLORS.forEach(function(c) {
+            var swatch = document.createElement('div');
+            swatch.className = 'preset-color';
+            if (c.toUpperCase() === savedColor.toUpperCase()) swatch.classList.add('selected');
+            swatch.style.backgroundColor = c;
+            swatch.title = c;
+            swatch.addEventListener('click', function(e) {
+                e.stopPropagation();
+                hexInput.value = c;
+                colorBtn.style.background = c;
+                presetsDiv.querySelectorAll('.preset-color').forEach(function(s) {
+                    s.classList.remove('selected');
+                });
+                swatch.classList.add('selected');
+            });
+            presetsDiv.appendChild(swatch);
+        });
+        expandDiv.appendChild(presetsDiv);
+        wrapper.appendChild(expandDiv);
+
+        /* Expand / collapse */
+        btnExpand.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var showing = expandDiv.classList.toggle('show');
+            btnExpand.classList.toggle('active', showing);
+            btnExpand.querySelector('i').className = showing
+                ? 'fa-solid fa-minus' : 'fa-solid fa-plus';
+            if (showing) {
+                setTimeout(function() {
+                    expandDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            }
+        });
+
+        /* Remove */
+        btnMinus.addEventListener('click', function() {
+            wrapper.parentElement.removeChild(wrapper);
+            updateMinButtons();
+        });
+
+        return wrapper;
+    }
+
+    function pickUnusedColor(index) {
+        var palette = PRESET_COLORS.slice();
+        var existing = getOptionRows().map(function(o) { return (o.color || '').toUpperCase(); });
+        for (var i = 0; i < palette.length; i++) {
+            var c = palette[(index + i) % palette.length];
+            if (existing.indexOf(c.toUpperCase()) === -1) return c;
+        }
+        return palette[index % palette.length];
+    }
+
+    function updateMinButtons() {
+        var rows = optionList.querySelectorAll('.option-row');
+        rows.forEach(function(row) {
+            var btn = row.querySelector('.btn-minus');
+            if (btn) btn.disabled = (rows.length <= 1);
+        });
+    }
+
+    function initOptions() {
+        DEFAULT_OPTIONS.forEach(function(name) {
+            optionList.appendChild(createOptionRow(name, null));
+        });
+        updateMinButtons();
+    }
+
+    function getOptionRows() {
+        var rows = optionList.querySelectorAll('.option-row');
+        var result = [];
+        rows.forEach(function(row) {
+            var nameInput = row.querySelector('.opt-name');
+            var name = nameInput ? nameInput.value.trim() : '';
+            var hexInput = row.querySelector('.hex-input');
+            var color = hexInput ? hexInput.value.trim() : '';
+            if (name) {
+                result.push({
+                    name: name,
+                    color: /^#[0-9A-Fa-f]{6}$/.test(color) ? color : ''
+                });
+            }
+        });
+        return result;
+    }
+
+    /* Add option */
+    btnAddOpt.addEventListener('click', function() {
+        var existingColors = getOptionRows().map(function(o) { return o.color.toLowerCase(); });
+        var usedColors = new Set(existingColors);
+        var palette = PRESET_COLORS.slice();
+        var usedColor = '';
+        for (var i = 0; i < palette.length; i++) {
+            if (!usedColors.has(palette[i].toLowerCase())) {
+                usedColor = palette[i];
+                break;
+            }
+        }
+        if (!usedColor) {
+            usedColor = palette[Math.floor(Math.random() * palette.length)];
+        }
+        var row = createOptionRow('', usedColor);
+        optionList.appendChild(row);
+        updateMinButtons();
+        var input = row.querySelector('.opt-name');
+        if (input) input.focus();
+    });
+
+    /* ================================================================
+       Canvas setup
+       ================================================================ */
+    function resize() {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        var size = wheelContainer.clientWidth;
+        canvas.width  = size * dpr;
+        canvas.height = size * dpr;
+        canvas.style.width  = size + 'px';
+        canvas.style.height = size + 'px';
+    }
+    window.addEventListener('resize', function() { resize(); draw(); });
+    resize();
+
+    /* ================================================================
+       Hash & RNG — 与旧版完全一致的 mulberry32
+       ================================================================ */
+    function hashString(str) {
+        var h = 0;
+        for (var i = 0; i < str.length; i++) {
+            h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+        }
+        return h >>> 0;
+    }
+
+    function mulberry32(a) {
+        return function() {
+            a |= 0; a = a + 0x6D2B79F5 | 0;
+            var t = Math.imul(a ^ a >>> 15, 1 | a);
+            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+
+    function lightenColor(hex, amount) {
+        var r = parseInt(hex.slice(1,3), 16);
+        var g = parseInt(hex.slice(3,5), 16);
+        var b = parseInt(hex.slice(5,7), 16);
+        r = Math.min(255, Math.round(r + (255 - r) * amount));
+        g = Math.min(255, Math.round(g + (255 - g) * amount));
+        b = Math.min(255, Math.round(b + (255 - b) * amount));
+        return '#' + [r,g,b].map(function(c) {
+            var h = c.toString(16);
+            return h.length === 1 ? '0' + h : h;
+        }).join('');
+    }
+
+    /* ================================================================
+       Seed construction — 与旧版算法对齐
+       旧版: hour + '|' + sorted_raw_lines + '|' + tag
+       新版: hour + '|' + sorted_option_data + '|' + customSeed
+       sorted_option_data = 各选项 "name,color" 按名称排序后用 | 连接
+       RNG 调用顺序: 1) rng() 决定扇区索引, 2) rng() 决定扇区内位置
+       与旧版一致
+       ================================================================ */
+    function buildSeed() {
+        var hour = new Date().toISOString().slice(0, 13);
+        var opts = getOptionRows();
+        var sorted = opts.slice().sort(function(a, b) {
+            if (a.name < b.name) return -1;
+            if (a.name > b.name) return 1;
+            return 0;
+        }).map(function(o) {
+            return o.name + (o.color ? ',' + o.color : '');
+        }).join('|');
+        var customSeed = seedEnabled ? customSeedInput.value.trim() : '';
+        var seedStr = hour + '|' + sorted + (customSeed ? '|' + customSeed : '');
+        currentSeed = hashString(seedStr);
+        return { seedStr: seedStr, seed: currentSeed };
+    }
+
+    function parseSectors() {
+        var opts = getOptionRows();
+        if (opts.length < 2) return false;
+        var palette = PRESET_COLORS.slice();
+        SECTORS = opts.map(function(opt, i) {
+            var c = opt.color || palette[i % palette.length];
+            return {
+                name: opt.name,
+                color: c,
+                light: lightenColor(c, 0.3)
+            };
+        });
+        return true;
+    }
+
+    /* ================================================================
+       Draw wheel
+       ================================================================ */
+    function draw() {
+        var w = canvas.width, h = canvas.height;
+        var cx = w / 2, cy = h / 2;
+        var r = R * dpr;
+        ctx.clearRect(0, 0, w, h);
+
+        if (SECTORS.length === 0) {
+            ctx.fillStyle = '#B1B2B5';
+            ctx.font = '18px "PixelFont", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('点击「应用列表」开始', cx, cy);
+            return;
+        }
+
+        var sectorAngle = (Math.PI * 2) / SECTORS.length;
+
+        for (var i = 0; i < SECTORS.length; i++) {
+            var startA = currentAngle + i * sectorAngle - Math.PI / 2;
+            var endA = startA + sectorAngle;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, r, startA, endA);
+            ctx.closePath();
+
+            ctx.fillStyle = SECTORS[i].color;
+            ctx.fill();
+
+            ctx.lineWidth = 2 * dpr;
+            ctx.strokeStyle = 'rgba(30,30,31,0.8)';
+            ctx.stroke();
+            ctx.restore();
+
+            /* Label */
+            var midA = startA + sectorAngle / 2;
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(midA);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            var textR = r * 0.62;
+            var labelSize = SECTORS.length <= 5
+                ? 18
+                : Math.max(12, 18 - (SECTORS.length - 5) * 1.5);
+            ctx.font = 'bold ' + (labelSize * dpr) + 'px "PixelFont", "NotoSans Bold", sans-serif';
+            ctx.fillStyle = '#fff';
+            ctx.shadowColor = 'rgba(0,0,0,0.7)';
+            ctx.shadowBlur = 4 * dpr;
+
+            var labelText = SECTORS[i].name;
+            if (labelText.length > 8) labelText = labelText.substring(0, 8);
+            ctx.fillText(labelText, textR, 0);
+            ctx.restore();
+        }
+
+        /* Outer ring */
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.lineWidth = 4 * dpr;
+        ctx.strokeStyle = 'rgba(30,30,31,0.9)';
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    function animationLoop() {
+        if (!isAnimating) draw();
+        requestAnimationFrame(animationLoop);
+    }
+    animationLoop();
+
+    /* ================================================================
+       Spin — RNG 调用顺序与旧版完全一致:
+       1. rng() — 扇区索引
+       2. rng() — 扇区内位置
+       ================================================================ */
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+    function animateSpin(fromAngle, toAngle, duration, easingFn, onDone) {
+        var startTime = performance.now();
+        function tick(now) {
+            var elapsed = now - startTime;
+            var progress = Math.min(elapsed / duration, 1);
+            var eased = easingFn(progress);
+            currentAngle = fromAngle + (toAngle - fromAngle) * eased;
+            draw();
+            if (progress < 1) {
+                requestAnimationFrame(tick);
+            } else {
+                currentAngle = toAngle;
+                draw();
+                if (onDone) onDone();
+            }
+        }
+        requestAnimationFrame(tick);
+    }
+
+    function spin() {
+        if (isAnimating || SECTORS.length < 2) return;
+        isAnimating = true;
+        btnApply.classList.add('status_disabled');
+        btnStart.classList.add('status_disabled');
+        wheelContainer.style.cursor = 'wait';
+
+        var seedObj = buildSeed();
+        var rng = mulberry32(seedObj.seed);
+
+        /* RNG 调用 #1: 决定停在哪一扇区 */
+        var pseudoIndex = Math.floor(rng() * SECTORS.length);
+        var sectorAngle = (Math.PI * 2) / SECTORS.length;
+        var margin = sectorAngle * 0.12;
+        /* RNG 调用 #2: 决定扇区内精确位置 */
+        var pointerTarget = pseudoIndex * sectorAngle + margin + rng() * (sectorAngle - 2 * margin);
+        var exactTargetAngle = -pointerTarget;
+        exactTargetAngle = ((exactTargetAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+
+        var fwdTarget = currentAngle + 6 * Math.PI * 2 +
+            ((exactTargetAngle - (currentAngle % (Math.PI * 2))) % (Math.PI * 2));
+        if (fwdTarget < currentAngle + 6 * Math.PI * 2) fwdTarget += Math.PI * 2;
+
+        var label = SECTORS[pseudoIndex].name;
+
+        animateSpin(currentAngle, fwdTarget, 3800, easeOutCubic, function() {
+            finishSpin(label);
+        });
+    }
+
+    function finishSpin(label) {
+        resultText.textContent = label;
+        resultHint.innerHTML = '<i class="fa-solid fa-clock"></i> 结果已锁定';
+        resultArea.classList.add('show');
+        isAnimating = false;
+        btnApply.classList.remove('status_disabled');
+        btnStart.classList.remove('status_disabled');
+        wheelContainer.style.cursor = 'pointer';
+
+        var seedObj = buildSeed();
+        seedInfo.textContent = '种子: ' + seedObj.seedStr.slice(0, 60);
+    }
+
+    /* ================================================================
+       Apply / Reset
+       ================================================================ */
+    function applyList() {
+        if (!parseSectors()) {
+            seedInfo.textContent = '至少需要 2 个选项';
+            return;
+        }
+        var result = buildSeed();
+        seedInfo.textContent = '种子: ' + result.seedStr.slice(0, 60);
+        currentAngle = 0;
+        draw();
+        updateURL();
+    }
+
+    function resetList() {
+        optionList.innerHTML = '';
+        rowCounter = 0;
+        customSeedInput.value = '';
+        customSeedInput.disabled = true;
+        seedEnabled = false;
+        seedCheckbox.src = 'empty_.png';
+        initOptions();
+        applyList();
+        resultArea.classList.remove('show');
+        resultText.textContent = '';
+        resultHint.textContent = '';
+    }
+
+    /* ================================================================
+       URL sharing — 包含自定义种子
+       ================================================================ */
+    function encodeURL(str) {
+        return btoa(unescape(encodeURIComponent(str)))
+            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+    function decodeURL(b64) {
+        return decodeURIComponent(escape(atob(b64.replace(/-/g, '+').replace(/_/g, '/'))));
+    }
+    function updateURL() {
+        var opts = getOptionRows();
+        var raw = opts.map(function(o) {
+            var s = o.name;
+            if (o.color) s += ',' + o.color;
+            return s;
+        }).join('\n');
+        var params = new URLSearchParams();
+        params.set('d', encodeURL(raw));
+        var cs = customSeedInput.value.trim();
+        if (seedEnabled && cs) {
+            params.set('s', encodeURL(cs));
+            params.set('se', '1');
+        }
+        var url = location.pathname + '?' + params.toString();
+        history.replaceState(null, '', url);
+    }
+    function loadFromURL() {
+        var params = new URLSearchParams(location.search);
+        var d = params.get('d');
+        if (d) {
+            try {
+                var decoded = decodeURL(d);
+                optionList.innerHTML = '';
+                rowCounter = 0;
+                var names = decoded.split('\n').filter(function(l) { return l.trim(); });
+                if (names.length > 0) {
+                    names.forEach(function(line) {
+                        var parts = line.split(',');
+                        var name = parts[0].trim();
+                        var color = (/^#[0-9A-Fa-f]{6}$/.test(parts[1] ? parts[1].trim() : ''))
+                            ? parts[1].trim() : '';
+                        if (name) {
+                            optionList.appendChild(createOptionRow(name, color));
+                        }
+                    });
+                }
+            } catch(e) { /* ignore */ }
+        }
+        var s = params.get('s');
+        var se = params.get('se');
+        if (s && se === '1') {
+            try {
+                customSeedInput.value = decodeURL(s);
+                seedEnabled = true;
+                seedCheckbox.src = 'empty_on.png';
+                customSeedInput.disabled = false;
+            } catch(e) { /* ignore */ }
+        }
+    }
+
+    /* ================================================================
+       Events
+       ================================================================ */
+    btnApply.addEventListener('click', function() {
+        if (parseSectors()) {
+            applyList();
+        }
+    });
+
+    btnReset.addEventListener('click', resetList);
+
+    btnStart.addEventListener('click', function() {
+        if (!parseSectors()) {
+            applyList();
+            if (SECTORS.length < 2) return;
+        }
+        spin();
+    });
+
+    wheelContainer.addEventListener('click', function() {
+        if (!isAnimating && SECTORS.length >= 2) {
+            spin();
+        }
+    });
+
+    /* 种子输入变化时重新应用 */
+    customSeedInput.addEventListener('input', function() {
+        if (seedEnabled) applyList();
+    });
+
+    /* ================================================================
+       Init
+       ================================================================ */
+    initOptions();
+    loadFromURL();
+    applyList();
+
+    /* Init picker SL grid on first open */
+    var pickerInited = false;
+    var origOpenColorPicker = openColorPicker;
+    openColorPicker = function(hex, cb) {
+        if (!pickerInited) {
+            initPickerSizes();
+            pickerInited = true;
+        }
+        origOpenColorPicker(hex, cb);
+    };
+})();
+</script>
+
+<!-- Meteor shower -->
+<script>
+(function() {
+    var canvas = document.getElementById('meteor-canvas');
+    var context = canvas.getContext('2d');
+    var W, H;
+
+    function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    var Meteors = [];
+    var MAX_METEORS = 60;
+
+    function Meteor() { this.reset(); }
+
+    Meteor.prototype.reset = function() {
+        this.x = Math.random() * W * 1.5 - W * 0.25;
+        this.y = -20 - Math.random() * H * 0.5;
+        this.len = 60 + Math.random() * 80;
+        this.speed = 4 + Math.random() * 6;
+        this.angle = Math.PI / 4 + (Math.random() - 0.5) * 0.3;
+        this.opacity = 0.3 + Math.random() * 0.5;
+        this.active = true;
+        this.fade = 0.003 + Math.random() * 0.005;
+        var hue = 200 + Math.random() * 40;
+        var sat = 10 + Math.random() * 30;
+        var light = 80 + Math.random() * 20;
+        this.color = 'hsla(' + hue + ',' + sat + '%,' + light + '%,';
+    };
+
+    Meteor.prototype.update = function() {
+        this.x -= this.speed * Math.cos(this.angle);
+        this.y += this.speed * Math.sin(this.angle);
+        this.opacity -= this.fade;
+        if (this.opacity <= 0 || this.y > H + 50) { this.reset(); }
+    };
+
+    Meteor.prototype.draw = function(ctx) {
+        if (!this.active) return;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.opacity);
+        ctx.lineWidth = 1.5;
+        ctx.lineCap = 'round';
+
+        var tailX = this.x + this.len * Math.cos(this.angle);
+        var tailY = this.y - this.len * Math.sin(this.angle);
+
+        var gradient = ctx.createLinearGradient(tailX, tailY, this.x, this.y);
+        gradient.addColorStop(0, this.color + '0)');
+        gradient.addColorStop(1, this.color + '1)');
+        ctx.strokeStyle = gradient;
+
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(tailX, tailY);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = this.color + '0.8)';
+        ctx.fill();
+
+        ctx.restore();
+    };
+
+    for (var i = 0; i < MAX_METEORS; i++) {
+        var m = new Meteor();
+        m.y = Math.random() * H;
+        m.opacity = Math.random() * 0.4;
+        Meteors.push(m);
+    }
+
+    function animate() {
+        context.clearRect(0, 0, W, H);
+        for (var i = 0; i < Meteors.length; i++) {
+            Meteors[i].update();
+            Meteors[i].draw(context);
+        }
+        requestAnimationFrame(animate);
+    }
+    animate();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>随机转盘 · 种子版</title>
+
+<!-- Font Awesome 6 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+<!-- Custom pixel font -->
+<style>
+@font-face { font-display:swap; font-family:'PixelFont'; src:url('font.otf') format('opentype'); }
+</style>
+
+<style>
+/* ================================================================
+   OreUI 语义化主题变量
+   ================================================================ */
+:root {
+    --neutral-background: #48494A;
+    --neutral-background-hovered: #58585A;
+    --neutral-background-pressed: #313233;
+    --neutral-shadow: #313233;
+    --neutral-text: #FFFFFF;
+    --neutral-text-dimmer: #D0D1D4;
+    --neutral-text-dimmest: #B1B2B5;
+    --neutral-border: #1E1E1F;
+    --neutral-border-focused: #FFFFFF;
+    --neutral-specular-default-top-left: rgba(255,255,255,0.6);
+    --neutral-specular-default-bottom-right: rgba(255,255,255,0.4);
+    --neutral-specular-top-left: rgba(255,255,255,0.2);
+    --neutral-specular-bottom-right: rgba(255,255,255,0.1);
+    --neutral-background-disabled: #D0D1D4;
+    --neutral-shadow-disabled: #B1B2B5;
+    --neutral-text-disabled: #48494A;
+    --neutral-border-disabled: #8C8D90;
+    --neutral-20-text: #1E1E1F;
+    --primary-background: #3C8527;
+    --primary-background-hovered: #2A641C;
+    --primary-background-pressed: #1D4D13;
+    --primary-shadow: #1D4D13;
+    --primary-text: #FFFFFF;
+    --primary-border: #1E1E1F;
+    --secondary-background: #D0D1D4;
+    --secondary-background-hovered: #B1B1B5;
+    --secondary-background-pressed: #B1B2B5;
+    --secondary-shadow: #58585A;
+    --secondary-text: #1E1E1F;
+    --secondary-border: #1E1E1F;
+    --destructive-background: #CA3636;
+    --destructive-background-hovered: #C02D2D;
+    --destructive-background-pressed: #AD1D1D;
+    --destructive-shadow: #AD1D1D;
+    --destructive-text: #FFFFFF;
+    --destructive-border: #1E1E1F;
+}
+
+/* ================================================================
+   Global Reset
+   ================================================================ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+    min-height: 100vh;
+    background: #000;
+    color: var(--neutral-text);
+    font-family: 'PixelFont', 'NotoSans Bold', sans-serif;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+}
+
+/* ================================================================
+   Meteor shower canvas
+   ================================================================ */
+#meteor-canvas {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* ================================================================
+   Layout — 电脑端左右，手机端上下
+   ================================================================ */
+.layout {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: row;
+    min-height: 100vh;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Left: Config */
+.config {
+    display: flex; flex-direction: column;
+    width: 380px; flex-shrink: 0;
+    padding: 40px 32px;
+    gap: 16px;
+    overflow-y: auto;
+    height: 100vh;
+}
+
+/* Right: Wheel */
+.wheel-side {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 20px;
+    min-height: 100vh;
+}
+
+/* ================================================================
+   Section title
+   ================================================================ */
+.section-title {
+    font-size: 1.4rem;
+    font-weight: bold;
+    letter-spacing: 3px;
+    color: var(--neutral-text-dimmest);
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--neutral-border);
+}
+
+/* ================================================================
+   Option rows
+   ================================================================ */
+.option-list {
+    display: flex; flex-direction: column; gap: 8px;
+}
+
+.option-row {
+    display: flex; align-items: center; gap: 8px;
+}
+
+.opt-name {
+    flex: 1; min-width: 0;
+    height: 48px;
+    background: rgba(72,73,74,0.85);
+    color: var(--neutral-text);
+    border: 2px solid var(--neutral-border);
+    padding: 0 14px;
+    font-size: 1.1rem;
+    font-family: 'PixelFont', 'NotoSans Bold', sans-serif;
+    outline: none;
+}
+.opt-name:focus { border-color: var(--neutral-border-focused); }
+.opt-name::placeholder { color: rgba(177,178,181,0.5); }
+
+/* Row action buttons */
+.btn-row-action {
+    width: 42px; height: 48px;
+    background: rgba(72,73,74,0.85);
+    border: 2px solid var(--neutral-border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.1s;
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+.btn-row-action:hover:not(:disabled) {
+    background: rgba(88,88,90,0.85);
+}
+.btn-row-action:disabled { opacity: 0.25; cursor: not-allowed; }
+.btn-row-action.btn-minus { color: var(--destructive-text); border-color: var(--destructive-border); }
+.btn-row-action.btn-expand { color: var(--secondary-text); }
+.btn-row-action.btn-expand.active { background: rgba(88,88,90,0.85); }
+
+/* Expanded sub-row */
+.option-expand {
+    display: none;
+    padding: 10px 0 0 0;
+    margin-left: 0;
+}
+.option-expand.show { display: flex; }
+
+.expand-row-inner {
+    display: flex; align-items: center; gap: 8px;
+}
+
+.expand-label {
+    font-size: 0.9rem;
+    color: var(--neutral-text-dimmest);
+    margin-right: 4px;
+}
+
+.color-swatch-btn {
+    width: 42px; height: 38px;
+    border: 2px solid var(--neutral-border);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    background: #48494a;
+    color: #fff;
+    font-size: 1rem;
+}
+.color-swatch-btn:hover { border-color: var(--neutral-border-focused); }
+
+.hex-input {
+    flex: 1; min-width: 0;
+    height: 38px;
+    background: rgba(72,73,74,0.85);
+    color: var(--neutral-text);
+    border: 2px solid var(--neutral-border);
+    padding: 0 8px;
+    font-size: 0.95rem;
+    font-family: 'PixelFont', monospace;
+    outline: none;
+}
+.hex-input:focus { border-color: var(--neutral-border-focused); }
+
+.preset-colors {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-top: 6px;
+}
+.preset-color {
+    width: 28px; height: 28px;
+    border: 2px solid rgba(0,0,0,0.5);
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.1s;
+}
+.preset-color:hover { transform: scale(1.2); }
+.preset-color.selected {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px var(--primary-background);
+}
+
+/* Add option button */
+.btn-add-opt {
+    width: 100%; height: 44px;
+    background: rgba(72,73,74,0.6);
+    color: var(--secondary-text);
+    border: 2px dashed var(--neutral-border);
+    font-size: 1rem;
+    font-family: 'PixelFont', 'NotoSans Bold', sans-serif;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background 0.1s;
+}
+.btn-add-opt:hover { background: rgba(88,88,90,0.6); }
+
+/* Collapsible help */
+.collapsible {
+    cursor: pointer; user-select: none;
+}
+.collapsible .collapsible-header {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--neutral-text-dimmest);
+    font-size: 1rem;
+    padding: 4px 0;
+}
+.collapsible .collapsible-arrow {
+    display: inline-block;
+    transition: transform 0.2s;
+    font-size: 0.8rem;
+    color: var(--neutral-text-dimmest);
+}
+.collapsible.open .collapsible-arrow { transform: rotate(90deg); }
+.collapsible-body {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+.collapsible.open .collapsible-body { max-height: 400px; }
+.collapsible-body-inner {
+    color: var(--neutral-text-dimmest);
+    font-size: 0.85rem;
+    line-height: 1.8;
+    padding: 8px 0;
+}
+.collapsible-body-inner b { color: var(--neutral-text-dimmer); }
+.collapsible-body-inner code {
+    background: rgba(48,48,49,0.8);
+    padding: 2px 6px;
+    font-family: 'PixelFont', monospace;
+    color: var(--neutral-text);
+}
+
+/* ================================================================
+   Action buttons
+   ================================================================ */
+.action-buttons {
+    display: flex; flex-direction: column; gap: 10px;
+}
+.action-buttons .oreui_btn_inner {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    height: 52px;
+    margin: 0;
+    border: none; outline: none;
+    font-family: 'PixelFont', 'NotoSans Bold', sans-serif;
+    cursor: pointer; transition: all 0.1s ease;
+    border-radius: 0 !important;
+    letter-spacing: 2px;
+    font-size: 1.1rem;
+}
+
+/* Secondary (white) */
+.oreui_btn_inner.status_normal {
+    height: 52px;
+    border: 2px solid var(--neutral-border);
+    background-color: var(--secondary-background);
+    box-shadow: inset 0 -4px var(--secondary-shadow),
+                inset 3px 3px var(--neutral-specular-default-top-left),
+                inset -3px -7px var(--neutral-specular-default-bottom-right);
+    color: var(--neutral-20-text);
+}
+.oreui_btn_inner.status_normal:hover:not(:disabled) {
+    background-color: var(--secondary-background-hovered);
+    box-shadow: inset 0 -4px var(--secondary-shadow),
+                inset 3px 3px rgba(255,255,255,0.8),
+                inset -3px -7px rgba(255,255,255,0.6);
+}
+.oreui_btn_inner.status_normal:active:not(:disabled) {
+    background-color: var(--secondary-background-pressed);
+    box-shadow: inset 3px 3px rgba(255,255,255,0.8),
+                inset -3px -3px rgba(255,255,255,0.6);
+}
+
+/* Primary (green) */
+.oreui_btn_inner.status_green {
+    height: 52px;
+    border: 2px solid var(--primary-border);
+    background-color: var(--primary-background);
+    box-shadow: inset 0 -4px var(--primary-shadow),
+                inset 3px 3px var(--neutral-specular-top-left),
+                inset -3px -7px var(--neutral-specular-bottom-right);
+    color: var(--primary-text);
+}
+.oreui_btn_inner.status_green:hover:not(:disabled) {
+    background-color: var(--primary-background-hovered);
+    box-shadow: inset 0 -4px var(--primary-shadow),
+                inset 3px 3px rgba(255,255,255,0.4),
+                inset -3px -7px rgba(255,255,255,0.3);
+}
+.oreui_btn_inner.status_green:active:not(:disabled) {
+    background-color: var(--primary-background-pressed);
+    box-shadow: inset 3px 3px rgba(255,255,255,0.4),
+                inset -3px -3px rgba(255,255,255,0.3);
+}
+
+/* Destructive (red) */
+.oreui_btn_inner.status_red {
+    height: 52px;
+    border: 2px solid var(--destructive-border);
+    background-color: var(--destructive-background);
+    box-shadow: inset 0 -4px var(--destructive-shadow),
+                inset 3px 3px var(--neutral-specular-top-left),
+                inset -3px -7px var(--neutral-specular-bottom-right);
+    color: var(--destructive-text);
+}
+.oreui_btn_inner.status_red:hover:not(:disabled) {
+    background-color: var(--destructive-background-hovered);
+}
+.oreui_btn_inner.status_red:active:not(:disabled) {
+    background-color: var(--destructive-background-pressed);
+}
+
+/* Disabled */
+.oreui_btn_inner:disabled,
+.oreui_btn_inner.status_disabled {
+    background-color: var(--neutral-background-disabled);
+    box-shadow: inset 0 -4px var(--neutral-shadow-disabled);
+    color: var(--neutral-text-disabled);
+    cursor: not-allowed;
+}
+
+/* Seed info */
+.seed-info {
+    color: var(--neutral-text-dimmest);
+    font-size: 0.75rem;
+    text-align: center;
+    word-break: break-all;
+    padding-top: 4px;
+    font-family: monospace;
+    min-height: 18px;
+}
+
+/* ================================================================
+   Wheel
+   ================================================================ */
+.wheel-container {
+    position: relative;
+    width: min(55vw, 500px); height: min(55vw, 500px);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.wheel-container canvas { display: block; width: 100%; height: 100%; }
+
+/* Pointer */
+.pointer {
+    position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
+    z-index: 10;
+}
+.pointer svg { display: block; }
+
+/* Result below wheel */
+.result-area {
+    margin-top: 32px;
+    min-height: 80px;
+    display: flex; flex-direction: column; align-items: center;
+    opacity: 0; transform: translateY(12px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.result-area.show { opacity: 1; transform: translateY(0); }
+
+.result-box {
+    background: rgba(72,73,74,0.9);
+    border: 3px solid var(--neutral-border-focused);
+    box-shadow:
+        inset 0 -4px var(--neutral-shadow),
+        inset 3px 3px var(--neutral-specular-default-top-left),
+        inset -3px -7px var(--neutral-specular-default-bottom-right),
+        3px 3px 0 0 rgba(0,0,0,0.5);
+    padding: 18px 48px;
+    text-align: center;
+    min-width: 160px;
+}
+.result-label {
+    font-size: 1rem;
+    color: var(--neutral-text-dimmest);
+    letter-spacing: 4px;
+    margin-bottom: 6px;
+}
+.result-value {
+    font-family: 'PixelFont', monospace;
+    font-size: 2.4rem;
+    font-weight: bold;
+    color: var(--primary-background);
+    letter-spacing: 3px;
+    max-width: 420px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.result-hint {
+    font-size: 0.9rem;
+    color: var(--neutral-text-dimmest);
+    margin-top: 6px;
+}
+
+/* ================================================================
+   Responsive
+   ================================================================ */
+@media (max-width: 860px) {
+    .layout { flex-direction: column; }
+    .config {
+        width: 100%; max-width: 600px;
+        height: auto; padding: 24px 20px;
+        border-right: none;
+    }
+    .wheel-side {
+        min-height: auto; padding: 20px 20px 40px;
+    }
+    .wheel-container {
+        width: min(75vw, 400px) !important;
+        height: min(75vw, 400px) !important;
+    }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: #48494a; border: 1px solid #000; }
+::-webkit-scrollbar-thumb:hover { background: #58585a; }
+
+.config { scrollbar-width: thin; scrollbar-color: #48494a #000; }
+</style>
+</head>
+<body>
+
+<!-- Meteor shower -->
+<canvas id="meteor-canvas"></canvas>
+
+<!-- Layout -->
+<div class="layout">
+
+<!-- ============ LEFT: Config ============ -->
+<div class="config">
+    <div class="section-title"><i class="fa-solid fa-list-check"></i> 选项设置</div>
+
+    <div class="option-list" id="optionList"></div>
+
+    <button class="btn-add-opt" id="btnAddOpt">
+        <i class="fa-solid fa-plus"></i> 新增选项
+    </button>
+
+    <!-- Collapsible -->
+    <div class="collapsible" id="collapsibleHelp">
+        <div class="collapsible-header">
+            <span class="collapsible-arrow"><i class="fa-solid fa-angle-right"></i></span>
+            <span>使用说明</span>
+        </div>
+        <div class="collapsible-body">
+            <div class="collapsible-body-inner">
+                填写选项名称（最多8个字符）。<br>
+                点击行右侧 <b>[+]</b> 展开扩展项，设置颜色（点击色块或输入 <code>#XXXXXX</code>）。<br>
+                点击 <b>[-]</b> 移除选项。<br>
+                点击 <b>[<i class="fa-solid fa-play"></i> 应用列表]</b> 或 <b>转盘</b> 即可抽签。<br>
+                点击 <b>[<i class="fa-solid fa-rotate-left"></i> 恢复默认]</b> 重置。<br>
+                每个选项参与种子生成，结果由时间+选项内容共同决定。
+            </div>
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="action-buttons">
+        <button class="oreui_btn_inner status_green" id="btnApply" title="应用列表">
+            <i class="fa-solid fa-play"></i> 应用列表
+        </button>
+        <button class="oreui_btn_inner status_red" id="btnReset" title="恢复默认">
+            <i class="fa-solid fa-rotate-left"></i> 恢复默认
+        </button>
+        <button class="oreui_btn_inner status_normal" id="btnStart" title="开始抽签">
+            <i class="fa-solid fa-dharmachakra"></i> 开始
+        </button>
+    </div>
+
+    <div class="seed-info" id="seedInfo"></div>
+</div>
+
+<!-- ============ RIGHT: Wheel ============ -->
+<div class="wheel-side">
+    <div class="wheel-container" id="wheelContainer">
+        <canvas id="wheel"></canvas>
+        <div class="pointer">
+            <svg width="28" height="36" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="14,32 7,8 14,14 21,8" fill="#CA3636" stroke="#1E1E1F" stroke-width="2"/>
+                <circle cx="14" cy="7" r="5" fill="#CA3636" stroke="#1E1E1F" stroke-width="2"/>
+            </svg>
+        </div>
+    </div>
+    <div class="result-area" id="resultArea">
+        <div class="result-box">
+            <div class="result-label"><i class="fa-solid fa-trophy"></i> 结果</div>
+            <div class="result-value" id="resultText"></div>
+            <div class="result-hint" id="resultHint"></div>
+        </div>
+    </div>
+</div>
+
+</div><!-- /layout -->
+
+<script>
+(function() {
+    /* ================================================================
+       DOM
+       ================================================================ */
+    var canvas      = document.getElementById('wheel');
+    var ctx         = canvas.getContext('2d');
+    var wheelContainer = document.getElementById('wheelContainer');
+    var optionList  = document.getElementById('optionList');
+    var btnAddOpt   = document.getElementById('btnAddOpt');
+    var btnApply    = document.getElementById('btnApply');
+    var btnReset    = document.getElementById('btnReset');
+    var btnStart    = document.getElementById('btnStart');
+    var seedInfo    = document.getElementById('seedInfo');
+    var resultArea  = document.getElementById('resultArea');
+    var resultText  = document.getElementById('resultText');
+    var resultHint  = document.getElementById('resultHint');
+    var collapsibleHelp = document.getElementById('collapsibleHelp');
+
+    /* ================================================================
+       Colors
+       ================================================================ */
+    var PRESET_COLORS = [
+        '#42CCCC','#9471E0','#FFB366','#89DEF9','#A0E081',
+        '#F064B8','#FFE866','#3C8527','#CA3636','#2E6BE5',
+        '#FF9800','#8BC34A','#607D8B','#E91E63','#00BCD4'
+    ];
+    // 每个索引对应的默认唯一色
+    var INDEX_DEFAULT_COLORS = [
+        '#42CCCC','#9471E0','#FFB366','#A0E081',
+        '#CA3636','#2E6BE5','#FFE866','#F064B8',
+        '#89DEF9','#FF9800','#8BC34A','#607D8B','#E91E63','#00BCD4','#3C8527'
+    ];
+
+    /* ================================================================
+       State
+       ================================================================ */
+    var R = 220;
+    var dpr = 1;
+    var SECTORS = [];
+    var currentAngle = 0;
+    var isAnimating = false;
+    var currentSeed = 0;
+    var currentHour = '';
+    var rowCounter = 0;
+    var DEFAULT_OPTIONS = ['解密', '单方块', '随机空岛'];
+
+    /* ================================================================
+       Collapsible
+       ================================================================ */
+    collapsibleHelp.addEventListener('click', function() {
+        collapsibleHelp.classList.toggle('open');
+    });
+
+    /* ================================================================
+       Create option row
+       ================================================================ */
+    function createOptionRow(name, color) {
+        rowCounter++;
+        var id = rowCounter;
+
+        var wrapper = document.createElement('div');
+        wrapper.className = 'option-row';
+
+        /* Main line */
+        var nameInput = document.createElement('input');
+        nameInput.className = 'opt-name';
+        nameInput.type = 'text';
+        nameInput.maxLength = 8;
+        nameInput.placeholder = '选项 ' + id;
+        nameInput.value = name || '';
+        nameInput.spellcheck = false;
+
+        var btnMinus = document.createElement('button');
+        btnMinus.className = 'btn-row-action btn-minus';
+        btnMinus.innerHTML = '<i class="fa-solid fa-minus"></i>';
+        btnMinus.title = '移除';
+
+        var btnExpand = document.createElement('button');
+        btnExpand.className = 'btn-row-action btn-expand';
+        btnExpand.innerHTML = '<i class="fa-solid fa-plus"></i>';
+        btnExpand.title = '扩展选项';
+
+        wrapper.appendChild(nameInput);
+        wrapper.appendChild(btnMinus);
+        wrapper.appendChild(btnExpand);
+
+        /* Expanded panel (below the row) */
+        var expandDiv = document.createElement('div');
+        expandDiv.className = 'option-expand';
+
+        var inner = document.createElement('div');
+        inner.className = 'expand-row-inner';
+
+        var expandLabel = document.createElement('span');
+        expandLabel.className = 'expand-label';
+        expandLabel.textContent = '颜色';
+
+        var colorBtn = document.createElement('button');
+        colorBtn.className = 'color-swatch-btn';
+        colorBtn.title = '选择颜色';
+        colorBtn.innerHTML = '<i class="fa-solid fa-eye-dropper"></i>';
+        var savedColor = color || INDEX_DEFAULT_COLORS[(id - 1) % INDEX_DEFAULT_COLORS.length];
+        colorBtn.style.background = savedColor;
+
+        var hexInput = document.createElement('input');
+        hexInput.className = 'hex-input';
+        hexInput.type = 'text';
+        hexInput.maxLength = 7;
+        hexInput.placeholder = '#XXXXXX';
+        hexInput.value = savedColor;
+        hexInput.spellcheck = false;
+
+        hexInput.addEventListener('input', function() {
+            var v = hexInput.value.trim();
+            if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
+                colorBtn.style.background = v;
+            }
+        });
+
+        /* Preset swatches */
+        var presetsDiv = document.createElement('div');
+        presetsDiv.className = 'preset-colors';
+        PRESET_COLORS.forEach(function(c) {
+            var swatch = document.createElement('div');
+            swatch.className = 'preset-color';
+            if (c === savedColor) swatch.classList.add('selected');
+            swatch.style.backgroundColor = c;
+            swatch.title = c;
+            swatch.addEventListener('click', function() {
+                hexInput.value = c;
+                colorBtn.style.background = c;
+                presetsDiv.querySelectorAll('.preset-color').forEach(function(s) {
+                    s.classList.remove('selected');
+                });
+                swatch.classList.add('selected');
+            });
+            presetsDiv.appendChild(swatch);
+        });
+
+        inner.appendChild(expandLabel);
+        inner.appendChild(colorBtn);
+        inner.appendChild(hexInput);
+        expandDiv.appendChild(inner);
+        expandDiv.appendChild(presetsDiv);
+        wrapper.appendChild(expandDiv);
+
+        /* Expand / collapse */
+        btnExpand.addEventListener('click', function() {
+            var showing = expandDiv.classList.toggle('show');
+            btnExpand.classList.toggle('active', showing);
+            btnExpand.querySelector('i').className = showing
+                ? 'fa-solid fa-minus' : 'fa-solid fa-plus';
+        });
+
+        /* Remove */
+        btnMinus.addEventListener('click', function() {
+            wrapper.parentElement.removeChild(wrapper);
+            updateMinButtons();
+        });
+
+        return wrapper;
+    }
+
+    function updateMinButtons() {
+        var rows = optionList.querySelectorAll('.option-row');
+        rows.forEach(function(row) {
+            var btn = row.querySelector('.btn-minus');
+            if (btn) btn.disabled = (rows.length <= 1);
+        });
+    }
+
+    function initOptions() {
+        DEFAULT_OPTIONS.forEach(function(name) {
+            optionList.appendChild(createOptionRow(name, null));
+        });
+        updateMinButtons();
+    }
+
+    function getOptionRows() {
+        var rows = optionList.querySelectorAll('.option-row');
+        var result = [];
+        rows.forEach(function(row) {
+            var nameInput = row.querySelector('.opt-name');
+            var name = nameInput ? nameInput.value.trim() : '';
+            var hexInput = row.querySelector('.hex-input');
+            var color = hexInput ? hexInput.value.trim() : '';
+            if (name) {
+                result.push({
+                    name: name,
+                    color: /^#[0-9A-Fa-f]{6}$/.test(color) ? color : ''
+                });
+            }
+        });
+        return result;
+    }
+
+    /* Add option — assign a unique unused color */
+    btnAddOpt.addEventListener('click', function() {
+        var existingColors = getOptionRows().map(function(o) { return o.color.toLowerCase(); });
+        var usedColors = new Set(existingColors);
+
+        /* Try to find an unused color from the palette */
+        var palette = [
+            '#42CCCC','#9471E0','#FFB366','#89DEF9','#A0E081',
+            '#F064B8','#FFE866','#3C8527','#CA3636','#2E6BE5',
+            '#FF9800','#8BC34A','#607D8B','#E91E63','#00BCD4'
+        ];
+        var usedColor = '';
+        for (var i = 0; i < palette.length; i++) {
+            if (!usedColors.has(palette[i].toLowerCase())) {
+                usedColor = palette[i];
+                break;
+            }
+        }
+        if (!usedColor) {
+            /* All palette used, pick a random one */
+            usedColor = palette[Math.floor(Math.random() * palette.length)];
+        }
+
+        var row = createOptionRow('', usedColor);
+        optionList.appendChild(row);
+        updateMinButtons();
+        var input = row.querySelector('.opt-name');
+        if (input) input.focus();
+    });
+
+    /* ================================================================
+       Canvas setup
+       ================================================================ */
+    function resize() {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        var size = wheelContainer.clientWidth;
+        canvas.width  = size * dpr;
+        canvas.height = size * dpr;
+        canvas.style.width  = size + 'px';
+        canvas.style.height = size + 'px';
+    }
+    window.addEventListener('resize', function() { resize(); draw(); });
+    resize();
+
+    /* ================================================================
+       Hash & RNG
+       ================================================================ */
+    function hashString(str) {
+        var h = 0;
+        for (var i = 0; i < str.length; i++) {
+            h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+        }
+        return h >>> 0;
+    }
+
+    function mulberry32(a) {
+        return function() {
+            a |= 0; a = a + 0x6D2B79F5 | 0;
+            var t = Math.imul(a ^ a >>> 15, 1 | a);
+            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+
+    function lightenColor(hex, amount) {
+        var r = parseInt(hex.slice(1,3), 16);
+        var g = parseInt(hex.slice(3,5), 16);
+        var b = parseInt(hex.slice(5,7), 16);
+        r = Math.min(255, Math.round(r + (255 - r) * amount));
+        g = Math.min(255, Math.round(g + (255 - g) * amount));
+        b = Math.min(255, Math.round(b + (255 - b) * amount));
+        return '#' + [r,g,b].map(function(c) {
+            var h = c.toString(16);
+            return h.length === 1 ? '0' + h : h;
+        }).join('');
+    }
+
+    function buildSeed() {
+        var hour = new Date().toISOString().slice(0, 13);
+        var opts = getOptionRows();
+        var sorted = opts.slice().sort(function(a, b) {
+            return a.name < b.name ? -1 : 1;
+        }).map(function(o) { return o.name + o.color; }).join('|');
+        currentHour = hour;
+        currentSeed = hashString(hour + '|' + sorted);
+        return { seedStr: hour + '|' + sorted, seed: currentSeed };
+    }
+
+    function parseSectors() {
+        var opts = getOptionRows();
+        if (opts.length < 2) return false;
+
+        var palette = [
+            '#42CCCC','#9471E0','#FFB366','#89DEF9','#A0E081',
+            '#F064B8','#FFE866','#3C8527','#CA3636','#2E6BE5',
+            '#FF9800','#8BC34A','#607D8B','#E91E63','#00BCD4'
+        ];
+
+        SECTORS = opts.map(function(opt, i) {
+            var c = opt.color || palette[i % palette.length];
+            return {
+                name: opt.name,
+                color: c,
+                light: lightenColor(c, 0.3)
+            };
+        });
+        return true;
+    }
+
+    /* ================================================================
+       Draw wheel — flat colors, no gradient, minimalist
+       ================================================================ */
+    function draw() {
+        var w = canvas.width, h = canvas.height;
+        var cx = w / 2, cy = h / 2;
+        var r = R * dpr;
+        ctx.clearRect(0, 0, w, h);
+
+        if (SECTORS.length === 0) {
+            ctx.fillStyle = '#B1B2B5';
+            ctx.font = '18px "PixelFont", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('点击「应用列表」开始', cx, cy);
+            return;
+        }
+
+        var sectorAngle = (Math.PI * 2) / SECTORS.length;
+
+        for (var i = 0; i < SECTORS.length; i++) {
+            var startA = currentAngle + i * sectorAngle - Math.PI / 2;
+            var endA = startA + sectorAngle;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, r, startA, endA);
+            ctx.closePath();
+
+            /* Flat color, no gradient */
+            ctx.fillStyle = SECTORS[i].color;
+            ctx.fill();
+
+            /* Separator line */
+            ctx.lineWidth = 2 * dpr;
+            ctx.strokeStyle = 'rgba(30,30,31,0.8)';
+            ctx.stroke();
+            ctx.restore();
+
+            /* Label */
+            var midA = startA + sectorAngle / 2;
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(midA);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            var textR = r * 0.62;
+            var labelSize = SECTORS.length <= 5
+                ? 18
+                : Math.max(12, 18 - (SECTORS.length - 5) * 1.5);
+            ctx.font = 'bold ' + (labelSize * dpr) + 'px "PixelFont", "NotoSans Bold", sans-serif';
+            ctx.fillStyle = '#fff';
+            ctx.shadowColor = 'rgba(0,0,0,0.7)';
+            ctx.shadowBlur = 4 * dpr;
+
+            var labelText = SECTORS[i].name;
+            if (labelText.length > 8) labelText = labelText.substring(0, 8);
+            ctx.fillText(labelText, textR, 0);
+            ctx.restore();
+        }
+
+        /* Outer ring */
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.lineWidth = 4 * dpr;
+        ctx.strokeStyle = 'rgba(30,30,31,0.9)';
+        ctx.stroke();
+        ctx.restore();
+
+        /* No center hub — leave center empty */
+    }
+
+    function animationLoop() {
+        if (!isAnimating) draw();
+        requestAnimationFrame(animationLoop);
+    }
+    animationLoop();
+
+    /* ================================================================
+       Spin
+       ================================================================ */
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+    function animateSpin(fromAngle, toAngle, duration, easingFn, onDone) {
+        var startTime = performance.now();
+        function tick(now) {
+            var elapsed = now - startTime;
+            var progress = Math.min(elapsed / duration, 1);
+            var eased = easingFn(progress);
+            currentAngle = fromAngle + (toAngle - fromAngle) * eased;
+            draw();
+            if (progress < 1) {
+                requestAnimationFrame(tick);
+            } else {
+                currentAngle = toAngle;
+                draw();
+                if (onDone) onDone();
+            }
+        }
+        requestAnimationFrame(tick);
+    }
+
+    function spin() {
+        if (isAnimating || SECTORS.length < 2) return;
+        isAnimating = true;
+        btnApply.classList.add('status_disabled');
+        btnStart.classList.add('status_disabled');
+        wheelContainer.style.cursor = 'wait';
+
+        var seedObj = buildSeed();
+        var rng = mulberry32(seedObj.seed);
+
+        var pseudoIndex = Math.floor(rng() * SECTORS.length);
+        var sectorAngle = (Math.PI * 2) / SECTORS.length;
+        var margin = sectorAngle * 0.12;
+        var pointerTarget = pseudoIndex * sectorAngle + margin + rng() * (sectorAngle - 2 * margin);
+        var exactTargetAngle = -pointerTarget;
+        exactTargetAngle = ((exactTargetAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+
+        var fwdTarget = currentAngle + 6 * Math.PI * 2 +
+            ((exactTargetAngle - (currentAngle % (Math.PI * 2))) % (Math.PI * 2));
+        if (fwdTarget < currentAngle + 6 * Math.PI * 2) fwdTarget += Math.PI * 2;
+
+        var label = SECTORS[pseudoIndex].name;
+
+        animateSpin(currentAngle, fwdTarget, 3800, easeOutCubic, function() {
+            finishSpin(label);
+        });
+    }
+
+    function finishSpin(label) {
+        resultText.textContent = label;
+        resultHint.innerHTML = '<i class="fa-solid fa-clock"></i> 结果已锁定';
+        resultArea.classList.add('show');
+        isAnimating = false;
+        btnApply.classList.remove('status_disabled');
+        btnStart.classList.remove('status_disabled');
+        wheelContainer.style.cursor = 'pointer';
+
+        var seedObj = buildSeed();
+        seedInfo.textContent = '种子: ' + seedObj.seedStr.slice(0, 60);
+    }
+
+    /* ================================================================
+       Apply / Reset
+       ================================================================ */
+    function applyList() {
+        if (!parseSectors()) {
+            seedInfo.textContent = '至少需要 2 个选项';
+            return;
+        }
+        var result = buildSeed();
+        seedInfo.textContent = '种子: ' + result.seedStr.slice(0, 60);
+        currentAngle = 0;
+        draw();
+        updateURL();
+    }
+
+    function resetList() {
+        optionList.innerHTML = '';
+        rowCounter = 0;
+        initOptions();
+        applyList();
+        /* Reset result display */
+        resultArea.classList.remove('show');
+        resultText.textContent = '';
+        resultHint.textContent = '';
+    }
+
+    /* ================================================================
+       URL sharing
+       ================================================================ */
+    function encodeURL(str) {
+        return btoa(unescape(encodeURIComponent(str)))
+            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+    function decodeURL(b64) {
+        return decodeURIComponent(escape(atob(b64.replace(/-/g, '+').replace(/_/g, '/'))));
+    }
+    function updateURL() {
+        var opts = getOptionRows();
+        var raw = opts.map(function(o) {
+            var s = o.name;
+            if (o.color) s += ',' + o.color;
+            return s;
+        }).join('\n');
+        var params = new URLSearchParams();
+        params.set('d', encodeURL(raw));
+        var url = location.pathname + '?' + params.toString();
+        history.replaceState(null, '', url);
+    }
+    function loadFromURL() {
+        var params = new URLSearchParams(location.search);
+        var d = params.get('d');
+        if (d) {
+            try {
+                var decoded = decodeURL(d);
+                optionList.innerHTML = '';
+                rowCounter = 0;
+                var names = decoded.split('\n').filter(function(l) { return l.trim(); });
+                if (names.length > 0) {
+                    names.forEach(function(line) {
+                        var parts = line.split(',');
+                        var name = parts[0].trim();
+                        var color = (/^#[0-9A-Fa-f]{6}$/.test(parts[1] ? parts[1].trim() : ''))
+                            ? parts[1].trim() : '';
+                        if (name) {
+                            optionList.appendChild(createOptionRow(name, color));
+                        }
+                    });
+                }
+            } catch(e) { /* ignore */ }
+        }
+    }
+
+    /* ================================================================
+       Events
+       ================================================================ */
+    btnApply.addEventListener('click', function() {
+        if (parseSectors()) {
+            applyList();
+        }
+    });
+
+    btnReset.addEventListener('click', resetList);
+
+    btnStart.addEventListener('click', function() {
+        if (!parseSectors()) {
+            applyList(); /* try to apply first */
+            if (SECTORS.length < 2) return;
+        }
+        spin();
+    });
+
+    /* Click wheel to spin (only after apply) */
+    wheelContainer.addEventListener('click', function() {
+        if (!isAnimating && SECTORS.length >= 2) {
+            spin();
+        }
+    });
+
+    /* ================================================================
+       Init
+       ================================================================ */
+    initOptions();
+    loadFromURL();
+    applyList();
+})();
+</script>
+
+<!-- ================================================================
+     Meteor shower animation
+     ================================================================ -->
+<script>
+(function() {
+    var canvas = document.getElementById('meteor-canvas');
+    var context = canvas.getContext('2d');
+    var W, H;
+
+    function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    var Meteors = [];
+    var MAX_METEORS = 60;
+
+    function Meteor() {
+        this.reset();
+    }
+
+    Meteor.prototype.reset = function() {
+        this.x = Math.random() * W * 1.5 - W * 0.25;
+        this.y = -20 - Math.random() * H * 0.5;
+        this.len = 60 + Math.random() * 80;
+        this.speed = 4 + Math.random() * 6;
+        this.angle = Math.PI / 4 + (Math.random() - 0.5) * 0.3;
+        this.opacity = 0.3 + Math.random() * 0.5;
+        this.active = true;
+        this.fade = 0.003 + Math.random() * 0.005;
+        /* White or subtle blue-white */
+        var hue = 200 + Math.random() * 40;
+        var sat = 10 + Math.random() * 30;
+        var light = 80 + Math.random() * 20;
+        this.color = 'hsla(' + hue + ',' + sat + '%,' + light + '%,';
+    };
+
+    Meteor.prototype.update = function() {
+        this.x -= this.speed * Math.cos(this.angle);
+        this.y += this.speed * Math.sin(this.angle);
+        this.opacity -= this.fade;
+        if (this.opacity <= 0 || this.y > H + 50) {
+            this.reset();
+        }
+    };
+
+    Meteor.prototype.draw = function(ctx) {
+        if (!this.active) return;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.opacity);
+        ctx.strokeStyle = this.color + '1)';
+        ctx.lineWidth = 1.5;
+        ctx.lineCap = 'round';
+
+        var tailX = this.x + this.len * Math.cos(this.angle);
+        var tailY = this.y - this.len * Math.sin(this.angle);
+
+        var gradient = ctx.createLinearGradient(tailX, tailY, this.x, this.y);
+        gradient.addColorStop(0, this.color + '0)');
+        gradient.addColorStop(1, this.color + '1)');
+        ctx.strokeStyle = gradient;
+
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(tailX, tailY);
+        ctx.stroke();
+
+        /* Head glow */
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = this.color + '0.8)';
+        ctx.fill();
+
+        ctx.restore();
+    };
+
+    /* Initialize some inactive meteors for staggered start */
+    for (var i = 0; i < MAX_METEORS; i++) {
+        var m = new Meteor();
+        /* Spread initial y positions so they don't all appear at once */
+        m.y = Math.random() * H;
+        m.opacity = Math.random() * 0.4;
+        Meteors.push(m);
+    }
+
+    function animate() {
+        context.clearRect(0, 0, W, H);
+        for (var i = 0; i < Meteors.length; i++) {
+            Meteors[i].update();
+            Meteors[i].draw(context);
+        }
+        requestAnimationFrame(animate);
+    }
+    animate();
+})();
+</script>
+
+</body>
+</html>
