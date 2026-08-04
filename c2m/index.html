@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChatColor ⇄ MiniMessage 转换器</title>
+
+<!-- Font Awesome 6 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+<style>
+@font-face { font-display:swap; font-family:'PixelFont'; src:url('font.otf') format('opentype'); }
+
+/* ================================================================
+   OreUI 语义化主题变量
+   ================================================================ */
+:root {
+    --neutral-background: #48494A;
+    --neutral-background-hovered: #58585A;
+    --neutral-background-pressed: #313233;
+    --neutral-shadow: #313233;
+    --neutral-text: #FFFFFF;
+    --neutral-text-dimmer: #D0D1D4;
+    --neutral-text-dimmest: #B1B2B5;
+    --neutral-border: #1E1E1F;
+    --neutral-border-focused: #FFFFFF;
+    --neutral-specular-default-top-left: rgba(255,255,255,0.6);
+    --neutral-specular-default-bottom-right: rgba(255,255,255,0.4);
+    --neutral-specular-top-left: rgba(255,255,255,0.2);
+    --neutral-specular-bottom-right: rgba(255,255,255,0.1);
+    --neutral-background-disabled: #D0D1D4;
+    --neutral-shadow-disabled: #B1B2B5;
+    --neutral-text-disabled: #48494A;
+    --neutral-border-disabled: #8C8D90;
+    --neutral-20-text: #1E1E1F;
+    --primary-background: #3C8527;
+    --primary-background-hovered: #2A641C;
+    --primary-background-pressed: #1D4D13;
+    --primary-shadow: #1D4D13;
+    --primary-text: #FFFFFF;
+    --primary-border: #1E1E1F;
+    --secondary-background: #D0D1D4;
+    --secondary-background-hovered: #B1B2B5;
+    --secondary-background-pressed: #B1B2B5;
+    --secondary-shadow: #58585A;
+    --secondary-text: #1E1E1F;
+    --secondary-border: #1E1E1F;
+    --destructive-background: #CA3636;
+    --destructive-background-hovered: #C02D2D;
+    --destructive-background-pressed: #AD1D1D;
+    --destructive-shadow: #AD1D1D;
+    --destructive-text: #FFFFFF;
+    --destructive-border: #1E1E1F;
+    --gray-20: #E6E8EB;
+    --gray-30: #D0D1D4;
+    --gray-40: #B1B2B5;
+    --gray-50: #8D8D90;
+    --gray-60: #58585A;
+    --gray-70: #48494A;
+    --gray-80: #313233;
+    --gray-90: #242425;
+    --gray-100: #1E1E1F;
+    --black: #000000;
+}
+
+/* ================================================================
+   Global Reset
+   ================================================================ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+    min-height: 100vh;
+    background: #000;
+    color: var(--neutral-text);
+    font-family: 'PixelFont', 'NotoSans Bold', sans-serif;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+}
+
+/* ================================================================
+   Layout
+   ================================================================ */
+.page-wrap {
+    position: relative; z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 60px 24px;
+    display: flex; flex-direction: column; gap: 20px;
+}
+
+/* ================================================================
+   Page title
+   ================================================================ */
+.page-title {
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: bold;
+    letter-spacing: 3px;
+    color: var(--neutral-text-dimmer);
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--neutral-border);
+}
+
+/* ================================================================
+   Section labels
+   ================================================================ */
+.section-label {
+    font-size: 0.85rem;
+    color: var(--neutral-text-dimmest);
+    letter-spacing: 2px;
+    display: flex; align-items: center; gap: 8px;
+}
+
+/* ================================================================
+   OreUI 风格 TextField (textarea)
+   ================================================================ */
+.oreui-textarea {
+    width: 100%;
+    min-height: 140px;
+    background-color: var(--gray-80);
+    border: 2px solid var(--gray-100);
+    box-shadow: inset 0 4px var(--gray-90);
+    caret-color: #6CC349;
+    color: var(--neutral-text);
+    font-family: 'PixelFont', 'NotoSans Bold', monospace;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    outline: none;
+    padding: 12px 14px;
+    resize: vertical;
+}
+.oreui-textarea:focus {
+    border-color: var(--neutral-border-focused);
+}
+.oreui-textarea::placeholder {
+    color: rgba(177,178,181,0.5);
+}
+.oreui-textarea::selection {
+    background-color: rgba(108, 195, 73, 0.5);
+}
+.oreui-textarea:read-only {
+    background-color: var(--gray-90);
+    color: var(--neutral-text-dimmer);
+    cursor: default;
+}
+
+/* ================================================================
+   OreUI 按钮组
+   ================================================================ */
+.btn-row {
+    display: flex; flex-wrap: wrap; gap: 10px;
+}
+
+.oreui-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 44px;
+    padding: 0 20px;
+    border: none; outline: none;
+    font-family: 'PixelFont', 'NotoSans Bold', sans-serif;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    border-radius: 0 !important;
+    white-space: nowrap;
+}
+
+/* 白色按钮 */
+.oreui-btn.btn-white {
+    border: 2px solid var(--neutral-border);
+    background-color: var(--secondary-background);
+    box-shadow: inset 0 -4px var(--secondary-shadow),
+                inset 3px 3px var(--neutral-specular-default-top-left),
+                inset -3px -7px var(--neutral-specular-default-bottom-right);
+    color: var(--neutral-20-text);
+}
+.oreui-btn.btn-white:hover:not(:disabled) {
+    background-color: var(--secondary-background-hovered);
+    box-shadow: inset 0 -4px var(--secondary-shadow),
+                inset 3px 3px rgba(255,255,255,0.8),
+                inset -3px -7px rgba(255,255,255,0.6);
+}
+.oreui-btn.btn-white:active:not(:disabled) {
+    background-color: var(--secondary-background-pressed);
+    box-shadow: inset 3px 3px rgba(255,255,255,0.8),
+                inset -3px -3px rgba(255,255,255,0.6);
+}
+
+/* 绿色按钮 */
+.oreui-btn.btn-green {
+    border: 2px solid var(--primary-border);
+    background-color: var(--primary-background);
+    box-shadow: inset 0 -4px var(--primary-shadow),
+                inset 3px 3px var(--neutral-specular-top-left),
+                inset -3px -7px var(--neutral-specular-bottom-right);
+    color: var(--primary-text);
+}
+.oreui-btn.btn-green:hover:not(:disabled) {
+    background-color: var(--primary-background-hovered);
+    box-shadow: inset 0 -4px var(--primary-shadow),
+                inset 3px 3px rgba(255,255,255,0.4),
+                inset -3px -7px rgba(255,255,255,0.3);
+}
+.oreui-btn.btn-green:active:not(:disabled) {
+    background-color: var(--primary-background-pressed);
+    box-shadow: inset 3px 3px rgba(255,255,255,0.4),
+                inset -3px -3px rgba(255,255,255,0.3);
+}
+
+/* 红色按钮 */
+.oreui-btn.btn-red {
+    border: 2px solid var(--destructive-border);
+    background-color: var(--destructive-background);
+    box-shadow: inset 0 -4px var(--destructive-shadow),
+                inset 3px 3px var(--neutral-specular-top-left),
+                inset -3px -7px var(--neutral-specular-bottom-right);
+    color: var(--destructive-text);
+}
+.oreui-btn.btn-red:hover:not(:disabled) {
+    background-color: var(--destructive-background-hovered);
+}
+.oreui-btn.btn-red:active:not(:disabled) {
+    background-color: var(--destructive-background-pressed);
+}
+
+/* 灰色按钮 */
+.oreui-btn.btn-gray {
+    border: 2px solid var(--neutral-border);
+    background-color: var(--gray-70);
+    box-shadow: inset 0 -4px var(--gray-90),
+                inset 3px 3px rgba(255,255,255,0.15),
+                inset -3px -3px rgba(255,255,255,0.08);
+    color: var(--neutral-text);
+}
+.oreui-btn.btn-gray:hover:not(:disabled) {
+    background-color: var(--gray-60);
+}
+.oreui-btn.btn-gray:active:not(:disabled) {
+    background-color: var(--gray-80);
+    box-shadow: inset 3px 3px rgba(0,0,0,0.3),
+                inset -3px -3px rgba(255,255,255,0.05);
+}
+
+.oreui-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+/* ================================================================
+   Preview area — OreUI 风格
+   ================================================================ */
+.preview-box {
+    background-color: var(--gray-80);
+    border: 2px solid var(--gray-100);
+    box-shadow: inset 0 4px var(--gray-90);
+    min-height: 60px;
+    padding: 14px 16px;
+    font-family: 'PixelFont', 'NotoSans Bold', monospace;
+    font-size: 1rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: var(--neutral-text);
+}
+
+/* ================================================================
+   Copy feedback toast
+   ================================================================ */
+.copy-toast {
+    position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+    background: var(--gray-100);
+    color: var(--primary-background);
+    border: 2px solid var(--primary-background);
+    padding: 10px 28px;
+    font-family: 'PixelFont', 'NotoSans Bold', sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+.copy-toast.show { opacity: 1; }
+
+/* ================================================================
+   Responsive
+   ================================================================ */
+@media (max-width: 600px) {
+    .page-wrap {
+        padding: 24px 14px 40px 14px;
+        gap: 14px;
+    }
+    .page-title {
+        font-size: 1.2rem;
+        letter-spacing: 1px;
+    }
+    .oreui-textarea {
+        min-height: 120px;
+        font-size: 0.85rem;
+        padding: 10px 12px;
+    }
+    .oreui-btn {
+        height: 40px;
+        padding: 0 14px;
+        font-size: 0.85rem;
+        letter-spacing: 0;
+        flex: 1 1 calc(50% - 5px);
+    }
+    .btn-row { gap: 8px; }
+    .preview-box {
+        font-size: 0.85rem;
+        padding: 10px 12px;
+    }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #48494a; border: 1px solid #000; }
+::-webkit-scrollbar-thumb:hover { background: #58585a; }
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+    <!-- Title -->
+    <div class="page-title" id="pageTitle">
+        <i class="fa-solid fa-code"></i> ChatColor &rarr; MiniMessage 转换器
+    </div>
+
+    <!-- Input -->
+    <div class="section-label" id="inputLabel">
+        <i class="fa-solid fa-pen-to-square"></i> 输入 ChatColor 格式文本
+    </div>
+    <textarea id="input" class="oreui-textarea" placeholder="在此输入 & 格式的文本，例如：&aHello &cWorld" spellcheck="false"></textarea>
+
+    <!-- Buttons -->
+    <div class="btn-row">
+        <button class="oreui-btn btn-green" id="swapBtn" title="切换方向">
+            <i class="fa-solid fa-right-left"></i> 切换方向
+        </button>
+        <button class="oreui-btn btn-white" id="copyBtn" title="复制结果">
+            <i class="fa-solid fa-copy"></i> 复制结果
+        </button>
+        <button class="oreui-btn btn-gray" id="clearBtn" title="清空">
+            <i class="fa-solid fa-eraser"></i> 清空
+        </button>
+        <button class="oreui-btn btn-red" id="exampleBtn" title="填入示例">
+            <i class="fa-solid fa-shuffle"></i> 随机示例
+        </button>
+    </div>
+
+    <!-- Output -->
+    <div class="section-label" id="outputLabel">
+        <i class="fa-solid fa-file-code"></i> MiniMessage 输出
+    </div>
+    <textarea id="output" class="oreui-textarea" placeholder="转换后的 MiniMessage 将显示在这里" readonly spellcheck="false"></textarea>
+
+    <!-- Preview -->
+    <div class="section-label">
+        <i class="fa-solid fa-eye"></i> 渲染预览
+    </div>
+    <div id="preview" class="preview-box">
+        （将显示渲染后的效果）
+    </div>
+
+</div>
+
+<!-- Copy toast -->
+<div class="copy-toast" id="copyToast">
+    <i class="fa-solid fa-circle-check"></i> 已复制到剪贴板
+</div>
+
+<script>
+// ============================================================
+// 1. 颜色映射表
+// ============================================================
+var COLOR_MAP = {
+    '0': 'black',
+    '1': 'dark_blue',
+    '2': 'dark_green',
+    '3': 'dark_aqua',
+    '4': 'dark_red',
+    '5': 'dark_purple',
+    '6': 'gold',
+    '7': 'gray',
+    '8': 'dark_gray',
+    '9': 'blue',
+    'a': 'green',
+    'b': 'aqua',
+    'c': 'red',
+    'd': 'light_purple',
+    'e': 'yellow',
+    'f': 'white'
+};
+
+var STYLE_MAP = {
+    'l': 'bold',
+    'o': 'italic',
+    'n': 'underlined',
+    'm': 'strikethrough',
+    'k': 'obfuscated',
+    'r': 'reset'
+};
+
+var ALL_CODES = new Set(
+    Object.keys(COLOR_MAP).concat(Object.keys(STYLE_MAP))
+);
+
+/* Reverse maps for MiniMessage → ChatColor */
+var REV_COLOR = {};
+var REV_STYLE = {};
+for (var k in COLOR_MAP) { REV_COLOR[COLOR_MAP[k]] = k; }
+for (var k in STYLE_MAP) { REV_STYLE[STYLE_MAP[k]] = k; }
+var ALL_NAMES = new Set(
+    Object.keys(REV_COLOR).concat(Object.keys(REV_STYLE))
+);
+
+/* Direction: 0 = ChatColor→MiniMessage, 1 = MiniMessage→ChatColor */
+var DIR = 0;
+
+// ============================================================
+// 2. 核心转换函数
+// ============================================================
+function convertChatColorToMiniMessage(input) {
+    if (!input) return '';
+
+    var text = input.replace(/§/g, '&');
+    var segments = [];
+    var activeStyles = new Set();
+    var buffer = '';
+
+    for (var i = 0; i < text.length; i++) {
+        var ch = text[i];
+
+        if (ch === '&') {
+            if (i + 1 < text.length) {
+                var code = text[i + 1].toLowerCase();
+                if (ALL_CODES.has(code)) {
+                    if (buffer) {
+                        segments.push({
+                            text: buffer,
+                            styles: new Set(activeStyles)
+                        });
+                        buffer = '';
+                    }
+
+                    if (code === 'r') {
+                        activeStyles.clear();
+                    } else if (COLOR_MAP[code]) {
+                        var newStyles = new Set();
+                        activeStyles.forEach(function(s) {
+                            var isColor = false;
+                            var colorValues = Object.values(COLOR_MAP);
+                            for (var j = 0; j < colorValues.length; j++) {
+                                if (colorValues[j] === s) { isColor = true; break; }
+                            }
+                            if (!isColor) newStyles.add(s);
+                        });
+                        newStyles.add(COLOR_MAP[code]);
+                        activeStyles = newStyles;
+                    } else if (STYLE_MAP[code]) {
+                        var styleName = STYLE_MAP[code];
+                        if (activeStyles.has(styleName)) {
+                            activeStyles.delete(styleName);
+                        } else {
+                            activeStyles.add(styleName);
+                        }
+                    }
+
+                    i++;
+                    continue;
+                }
+            }
+            buffer += ch;
+        } else {
+            buffer += ch;
+        }
+    }
+
+    if (buffer) {
+        segments.push({
+            text: buffer,
+            styles: new Set(activeStyles)
+        });
+    }
+
+    // 渲染
+    var result = '';
+    for (var k = 0; k < segments.length; k++) {
+        var seg = segments[k];
+        if (!seg.text) continue;
+        var styles = [];
+        seg.styles.forEach(function(s) { styles.push(s); });
+        if (styles.length === 0) {
+            result += escapeMiniMessage(seg.text);
+        } else {
+            var openTags = '';
+            var closeTags = '';
+            for (var m = 0; m < styles.length; m++) {
+                openTags += '<' + styles[m] + '>';
+            }
+            for (var n = styles.length - 1; n >= 0; n--) {
+                closeTags += '</' + styles[n] + '>';
+            }
+            result += openTags + escapeMiniMessage(seg.text) + closeTags;
+        }
+    }
+
+    return result;
+}
+
+// ============================================================
+// 2b. MiniMessage → ChatColor 反向转换
+// ============================================================
+function convertMiniMessageToChatColor(input) {
+    if (!input) return '';
+
+    var out = '';
+    var i = 0;
+    var stack = []; /* track open tags to re-apply on close */
+
+    while (i < input.length) {
+        /* Handle escape sequences */
+        if (input[i] === '\\' && i + 1 < input.length) {
+            out += input[i + 1];
+            i += 2;
+            continue;
+        }
+
+        /* Opening tag: <name> */
+        if (input[i] === '<' && input[i + 1] !== '/') {
+            var end = input.indexOf('>', i);
+            if (end === -1) { out += input[i]; i++; continue; }
+
+            var name = input.slice(i + 1, end);
+            if (ALL_NAMES.has(name)) {
+                stack.push(name);
+                if (name === 'reset') {
+                    out += '&r';
+                    stack = [];
+                } else if (REV_COLOR[name]) {
+                    out += '&' + REV_COLOR[name];
+                } else if (REV_STYLE[name]) {
+                    out += '&' + REV_STYLE[name];
+                }
+            } else {
+                /* Unknown tag, pass through as-is */
+                out += input.slice(i, end + 1);
+            }
+            i = end + 1;
+            continue;
+        }
+
+        /* Closing tag: </name> */
+        if (input[i] === '<' && input[i + 1] === '/') {
+            var end = input.indexOf('>', i);
+            if (end === -1) { out += input[i]; i++; continue; }
+
+            var name = input.slice(i + 2, end);
+            if (ALL_NAMES.has(name)) {
+                /* Remove this tag from the stack */
+                var idx = stack.lastIndexOf(name);
+                if (idx >= 0) { stack.splice(idx, 1); }
+
+                /* Reset and re-apply remaining stack */
+                out += '&r';
+                for (var s = 0; s < stack.length; s++) {
+                    var n = stack[s];
+                    if (n === 'reset') {
+                        out += '&r';
+                        stack = [];
+                        break;
+                    } else if (REV_COLOR[n]) {
+                        out += '&' + REV_COLOR[n];
+                    } else if (REV_STYLE[n]) {
+                        out += '&' + REV_STYLE[n];
+                    }
+                }
+            } else {
+                out += input.slice(i, end + 1);
+            }
+            i = end + 1;
+            continue;
+        }
+
+        out += input[i];
+        i++;
+    }
+
+    return out;
+}
+
+// ============================================================
+// 3. 辅助函数
+// ============================================================
+function escapeMiniMessage(text) {
+    return text
+        .replace(/\\/g, '\\\\')
+        .replace(/</g, '\\<')
+        .replace(/>/g, '\\>');
+}
+
+// ============================================================
+// 4. 预览功能
+// ============================================================
+function renderMiniMessageToHTML(mmText) {
+    if (!mmText) return '';
+
+    var colorCSS = {
+        'black': '#000000',
+        'dark_blue': '#0000AA',
+        'dark_green': '#00AA00',
+        'dark_aqua': '#00AAAA',
+        'dark_red': '#AA0000',
+        'dark_purple': '#AA00AA',
+        'gold': '#FFAA00',
+        'gray': '#AAAAAA',
+        'dark_gray': '#555555',
+        'blue': '#5555FF',
+        'green': '#55FF55',
+        'aqua': '#55FFFF',
+        'red': '#FF5555',
+        'light_purple': '#FF55FF',
+        'yellow': '#FFFF55',
+        'white': '#FFFFFF'
+    };
+
+    var html = mmText
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    // 颜色标签
+    var colorKeys = Object.keys(colorCSS);
+    for (var i = 0; i < colorKeys.length; i++) {
+        var name = colorKeys[i];
+        var css = colorCSS[name];
+        var openRegex = new RegExp('&lt;' + name + '&gt;', 'g');
+        var closeRegex = new RegExp('&lt;/' + name + '&gt;', 'g');
+        html = html.replace(openRegex, '<span style="color:' + css + ';">');
+        html = html.replace(closeRegex, '</span>');
+    }
+
+    // 样式标签
+    var styleCSS = {
+        'bold': 'font-weight:bold;',
+        'italic': 'font-style:italic;',
+        'underlined': 'text-decoration:underline;',
+        'strikethrough': 'text-decoration:line-through;',
+        'obfuscated': 'background:#333;color:#fff;'
+    };
+
+    var styleKeys = Object.keys(styleCSS);
+    for (var j = 0; j < styleKeys.length; j++) {
+        var sName = styleKeys[j];
+        var sCss = styleCSS[sName];
+        var sOpenRegex = new RegExp('&lt;' + sName + '&gt;', 'g');
+        var sCloseRegex = new RegExp('&lt;/' + sName + '&gt;', 'g');
+        html = html.replace(sOpenRegex, '<span style="' + sCss + '">');
+        html = html.replace(sCloseRegex, '</span>');
+    }
+
+    html = html.replace(/&lt;reset&gt;/g, '');
+    html = html.replace(/&lt;\/?[a-z_]+&gt;/g, '');
+
+    return html;
+}
+
+// ============================================================
+// 5. 更新全部
+// ============================================================
+function updateAll() {
+    var inputVal = document.getElementById('input').value;
+    var output;
+    var previewHtml;
+
+    if (DIR === 0) {
+        /* ChatColor → MiniMessage */
+        output = convertChatColorToMiniMessage(inputVal);
+        previewHtml = renderMiniMessageToHTML(output);
+    } else {
+        /* MiniMessage → ChatColor */
+        output = convertMiniMessageToChatColor(inputVal);
+        /* Preview as raw MiniMessage (use input directly since output is ChatColor) */
+        previewHtml = renderMiniMessageToHTML(inputVal);
+    }
+
+    document.getElementById('output').value = output;
+    document.getElementById('preview').innerHTML = previewHtml || '<span style="color:#B1B2B5;">（空）</span>';
+}
+
+// ============================================================
+// 6. 复制功能
+// ============================================================
+function copyResult() {
+    var output = document.getElementById('output');
+    output.select();
+    output.setSelectionRange(0, 99999);
+    try {
+        document.execCommand('copy');
+        showToast();
+    } catch (err) {
+        alert('复制失败，请手动复制。');
+    }
+}
+
+function showToast() {
+    var toast = document.getElementById('copyToast');
+    toast.classList.add('show');
+    setTimeout(function() {
+        toast.classList.remove('show');
+    }, 2000);
+}
+
+// ============================================================
+// 7. 清空
+// ============================================================
+function clearAll() {
+    document.getElementById('input').value = '';
+    document.getElementById('output').value = '';
+    document.getElementById('preview').innerHTML = '<span style="color:#B1B2B5;">（将显示渲染后的效果）</span>';
+}
+
+// ============================================================
+// 8. 示例
+// ============================================================
+/* ChatColor examples */
+var CC_EXAMPLES = [
+    '&a普通绿色 &l&c粗体红色 &n&9下划线蓝色 &o&5斜体紫色',
+    '&l&a粗体绿色 &l取消粗体&r&b还是青色 &n&e下划线金色 &n取消下划线&r&d粉色',
+    '&k&4乱码文字 &r&6正常金色 &l&6粗体金色',
+    '&c红色 &l粗体 &n下划线 &o斜体 &m删除线 &r&a绿色 &l粗体 &n下划线 &r&6金色普通',
+    '&6&l====== &e&l服务器公告 &6&l======\n&a欢迎来到 &b&l奇幻世界 &a服务器！\n&7当前在线: &c&l42 &7人\n&e祝您游戏愉快！',
+    '&8[&a+&8] &a玩家123 &7说: &f&l大家好！&r &d♥ &e&n欢迎加入&r &b我们的队伍！',
+    '&l&a粗体绿 &c粗体红 &e粗体黄 &9粗体蓝',
+    '&k&l&o&n&m&4超级乱码 &r&6普通 &l&6粗体 &o&6斜体 &n&6下划线 &m&6删除线 &k&6乱码'
+];
+
+/* MiniMessage examples */
+var MM_EXAMPLES = [
+    '<green>普通绿色 <bold><red>粗体红色</red></bold> <underlined><blue>下划线蓝色</blue></underlined> <italic><dark_purple>斜体紫色</dark_purple></italic>',
+    '<gold><bold>=== <yellow><bold>服务器公告 <gold><bold>===</bold></gold>\n<green>欢迎 <aqua><bold>奇幻世界 <green>服务器！',
+    '<obfuscated><dark_red>乱码文字 <reset><gold>正常金色 <bold><gold>粗体金色</bold></gold>',
+    '<red>红色 <bold>粗体 <underlined>下划线 <italic>斜体 <strikethrough>删除线</strikethrough></italic></underlined></bold></red>',
+    '<dark_gray>[<green>+<dark_gray>] <green>玩家123 <gray>说: <white><bold>大家好！</bold></white>',
+    '<bold><green>粗体绿 <red>粗体红 <yellow>粗体黄 <blue>粗体蓝</blue></yellow></red></green>'
+];
+
+function loadExamples() {
+    var pool = DIR === 0 ? CC_EXAMPLES : MM_EXAMPLES;
+    var selected = pool[Math.floor(Math.random() * pool.length)];
+    document.getElementById('input').value = selected;
+    updateAll();
+}
+
+/* Swap direction */
+function swapDirection() {
+    DIR = DIR === 0 ? 1 : 0;
+
+    /* Update UI labels */
+    if (DIR === 0) {
+        document.getElementById('pageTitle').innerHTML = '<i class="fa-solid fa-code"></i> ChatColor &rarr; MiniMessage 转换器';
+        document.getElementById('inputLabel').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> 输入 ChatColor 格式文本';
+        document.getElementById('outputLabel').innerHTML = '<i class="fa-solid fa-file-code"></i> MiniMessage 输出';
+        document.getElementById('input').placeholder = '在此输入 & 格式的文本，例如：&aHello &cWorld';
+    } else {
+        document.getElementById('pageTitle').innerHTML = '<i class="fa-solid fa-code"></i> MiniMessage &rarr; ChatColor 转换器';
+        document.getElementById('inputLabel').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> 输入 MiniMessage 格式文本';
+        document.getElementById('outputLabel').innerHTML = '<i class="fa-solid fa-file-code"></i> ChatColor 输出';
+        document.getElementById('input').placeholder = '在此输入 MiniMessage 文本，例如：<red><bold>hello</bold></red>';
+    }
+
+    /* Swap input and output text */
+    var inVal = document.getElementById('input').value;
+    var outVal = document.getElementById('output').value;
+    document.getElementById('input').value = outVal;
+    document.getElementById('output').value = '';
+
+    /* Re-convert in new direction */
+    updateAll();
+}
+
+// ============================================================
+// 9. 绑定事件
+// ============================================================
+document.getElementById('swapBtn').addEventListener('click', swapDirection);
+document.getElementById('input').addEventListener('input', updateAll);
+document.getElementById('copyBtn').addEventListener('click', copyResult);
+document.getElementById('clearBtn').addEventListener('click', clearAll);
+document.getElementById('exampleBtn').addEventListener('click', loadExamples);
+
+document.getElementById('input').addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'Enter') {
+        updateAll();
+    }
+});
+
+// 初始化
+window.onload = function() {
+    loadExamples();
+};
+</script>
+
+</body>
+</html>
